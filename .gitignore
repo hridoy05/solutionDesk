@@ -5,3 +5,7 @@ build/
 .env.local
 .DS_Store
 *.log
+
+# Claude Code internal files
+.agents/
+skills-lock.json
