@@ -5,8 +5,5 @@ declare global {
     interface Request {
       authSession: { session: Session; user: User } | null;
     }
-    interface Response {
-      user: User | null;
-    }
   }
 }

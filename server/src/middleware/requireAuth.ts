@@ -10,7 +10,6 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     res.status(401).json({ error: 'Unauthorized' });
     return;
   }
-  res.user = session.user;
   req.authSession = session;
   next();
 }

@@ -5,6 +5,7 @@ import morgan from 'morgan';
 import { toNodeHandler } from 'better-auth/node';
 import { auth } from './lib/auth';
 import { requireAuth } from './middleware/requireAuth';
+import prisma from './lib/prisma';
 
 const app = express();
 
@@ -23,8 +24,13 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-app.get('/api/me', requireAuth, (req, res) => {
-  res.json(req.authSession!.user);
+app.get('/api/me', requireAuth, async (req, res) => {
+  const userId = req.authSession!.user.id;
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, name: true, email: true, emailVerified: true, role: true, createdAt: true },
+  });
+  res.json(user);
 });
 
 export default app;
