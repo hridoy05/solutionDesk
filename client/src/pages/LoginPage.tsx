@@ -1,27 +1,38 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { authClient } from '../lib/auth-client';
+
+const loginSchema = z.object({
+  email: z.email('Enter a valid email address'),
+  password: z.string().min(1, 'Password is required'),
+});
+
+type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const { data: session, isPending } = authClient.useSession();
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+  });
 
   useEffect(() => {
     if (!isPending && session) navigate('/', { replace: true });
   }, [session, isPending, navigate]);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
-    const { error: signInError } = await authClient.signIn.email({ email, password });
+  async function onSubmit(data: LoginFormData) {
+    const { error: signInError } = await authClient.signIn.email(data);
     if (signInError) {
-      setError(signInError.message ?? 'Invalid credentials');
-      setLoading(false);
+      setError('root', { message: signInError.message ?? 'Invalid credentials' });
     } else {
       navigate('/', { replace: true });
     }
@@ -46,17 +57,18 @@ export default function LoginPage() {
         <h1 style={{ margin: '0 0 0.25rem', fontSize: '1.4rem' }}>SolutionDesk</h1>
         <p style={{ margin: '0 0 1.5rem', color: '#6b7280', fontSize: '0.9rem' }}>Sign in to your account</p>
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
             <label htmlFor="email" style={{ fontSize: '0.85rem', fontWeight: 500 }}>Email</label>
             <input
               id="email"
               type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              style={{ padding: '0.5rem 0.75rem', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '0.9rem' }}
+              {...register('email')}
+              style={{ padding: '0.5rem 0.75rem', border: `1px solid ${errors.email ? '#dc2626' : '#d1d5db'}`, borderRadius: '6px', fontSize: '0.9rem' }}
             />
+            {errors.email && (
+              <span style={{ color: '#dc2626', fontSize: '0.8rem' }}>{errors.email.message}</span>
+            )}
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
@@ -64,20 +76,21 @@ export default function LoginPage() {
             <input
               id="password"
               type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              style={{ padding: '0.5rem 0.75rem', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '0.9rem' }}
+              {...register('password')}
+              style={{ padding: '0.5rem 0.75rem', border: `1px solid ${errors.password ? '#dc2626' : '#d1d5db'}`, borderRadius: '6px', fontSize: '0.9rem' }}
             />
+            {errors.password && (
+              <span style={{ color: '#dc2626', fontSize: '0.8rem' }}>{errors.password.message}</span>
+            )}
           </div>
 
-          {error && (
-            <p style={{ margin: 0, color: '#dc2626', fontSize: '0.85rem' }}>{error}</p>
+          {errors.root && (
+            <p style={{ margin: 0, color: '#dc2626', fontSize: '0.85rem' }}>{errors.root.message}</p>
           )}
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={isSubmitting}
             style={{
               padding: '0.6rem',
               background: '#111827',
@@ -85,11 +98,11 @@ export default function LoginPage() {
               border: 'none',
               borderRadius: '6px',
               fontSize: '0.9rem',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              opacity: loading ? 0.7 : 1,
+              cursor: isSubmitting ? 'not-allowed' : 'pointer',
+              opacity: isSubmitting ? 0.7 : 1,
             }}
           >
-            {loading ? 'Signing in…' : 'Sign in'}
+            {isSubmitting ? 'Signing in…' : 'Sign in'}
           </button>
         </form>
       </div>
