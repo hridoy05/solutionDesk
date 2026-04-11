@@ -12,7 +12,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const loginSchema = z.object({
   email: z.email('Enter a valid email address'),
-  password: z.string(),
+  password: z.string().min(1, 'Password is required'),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;

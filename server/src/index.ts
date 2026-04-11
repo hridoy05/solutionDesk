@@ -4,6 +4,12 @@ import prisma from './lib/prisma';
 
 const PORT = process.env.PORT || 5000;
 
+const secret = process.env.BETTER_AUTH_SECRET;
+if (!secret || secret.length < 32 || secret === 'your-secret-key-change-in-production') {
+  console.error('FATAL: BETTER_AUTH_SECRET is missing, too short, or uses the example value. Set a strong random secret (min 32 chars).');
+  process.exit(1);
+}
+
 async function start() {
   console.log('Connecting to database...');
   try {

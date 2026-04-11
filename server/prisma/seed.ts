@@ -28,13 +28,17 @@ async function seedUser(email: string, name: string, role: 'admin' | 'agent', pa
 async function main() {
   const adminEmail = process.env.ADMIN_EMAIL;
   const adminPassword = process.env.ADMIN_PASSWORD;
+  const agentPassword = process.env.AGENT_PASSWORD;
 
   if (!adminEmail || !adminPassword) {
     throw new Error('ADMIN_EMAIL and ADMIN_PASSWORD must be set in .env');
   }
+  if (adminPassword.length < 8) {
+    throw new Error('ADMIN_PASSWORD must be at least 8 characters');
+  }
 
   await seedUser(adminEmail, 'Admin', 'admin', adminPassword);
-  await seedUser('agent@example.com', 'Agent', 'agent', adminPassword);
+  await seedUser('agent@example.com', 'Agent', 'agent', agentPassword || adminPassword);
 }
 
 main()
