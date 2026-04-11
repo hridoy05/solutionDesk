@@ -9,7 +9,10 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
-    "db:seed": "ts-node --transpile-only prisma/seed.ts"
+    "db:seed": "ts-node --transpile-only prisma/seed.ts",
+    "start:test": "dotenvx run --env-file .env.test --overload -- ts-node --transpile-only src/index.ts",
+    "db:migrate:test": "dotenvx run --env-file .env.test --overload -- prisma migrate deploy",
+    "db:seed:test": "dotenvx run --env-file .env.test --overload -- ts-node --transpile-only prisma/seed.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.14.0",
