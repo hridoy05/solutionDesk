@@ -39,68 +39,46 @@ export default function LoginPage() {
   }
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: '#f9fafb',
-    }}>
-      <div style={{
-        width: '100%',
-        maxWidth: '380px',
-        padding: '2rem',
-        background: '#fff',
-        borderRadius: '10px',
-        border: '1px solid #e5e7eb',
-      }}>
-        <h1 style={{ margin: '0 0 0.25rem', fontSize: '1.4rem' }}>SolutionDesk</h1>
-        <p style={{ margin: '0 0 1.5rem', color: '#6b7280', fontSize: '0.9rem' }}>Sign in to your account</p>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="w-full max-w-sm p-8 bg-white rounded-xl border border-gray-200">
+        <h1 className="text-2xl font-semibold mb-1">SolutionDesk</h1>
+        <p className="text-sm text-gray-500 mb-6">Sign in to your account</p>
 
-        <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-            <label htmlFor="email" style={{ fontSize: '0.85rem', fontWeight: 500 }}>Email</label>
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1">
+            <label htmlFor="email" className="text-sm font-medium">Email</label>
             <input
               id="email"
               type="email"
               {...register('email')}
-              style={{ padding: '0.5rem 0.75rem', border: `1px solid ${errors.email ? '#dc2626' : '#d1d5db'}`, borderRadius: '6px', fontSize: '0.9rem' }}
+              className={`px-3 py-2 text-sm rounded-md border ${errors.email ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:ring-2 focus:ring-gray-900`}
             />
             {errors.email && (
-              <span style={{ color: '#dc2626', fontSize: '0.8rem' }}>{errors.email.message}</span>
+              <span className="text-red-600 text-xs">{errors.email.message}</span>
             )}
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-            <label htmlFor="password" style={{ fontSize: '0.85rem', fontWeight: 500 }}>Password</label>
+          <div className="flex flex-col gap-1">
+            <label htmlFor="password" className="text-sm font-medium">Password</label>
             <input
               id="password"
               type="password"
               {...register('password')}
-              style={{ padding: '0.5rem 0.75rem', border: `1px solid ${errors.password ? '#dc2626' : '#d1d5db'}`, borderRadius: '6px', fontSize: '0.9rem' }}
+              className={`px-3 py-2 text-sm rounded-md border ${errors.password ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:ring-2 focus:ring-gray-900`}
             />
             {errors.password && (
-              <span style={{ color: '#dc2626', fontSize: '0.8rem' }}>{errors.password.message}</span>
+              <span className="text-red-600 text-xs">{errors.password.message}</span>
             )}
           </div>
 
           {errors.root && (
-            <p style={{ margin: 0, color: '#dc2626', fontSize: '0.85rem' }}>{errors.root.message}</p>
+            <p className="text-red-600 text-sm">{errors.root.message}</p>
           )}
 
           <button
             type="submit"
             disabled={isSubmitting}
-            style={{
-              padding: '0.6rem',
-              background: '#111827',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '6px',
-              fontSize: '0.9rem',
-              cursor: isSubmitting ? 'not-allowed' : 'pointer',
-              opacity: isSubmitting ? 0.7 : 1,
-            }}
+            className="py-2 bg-gray-900 text-white text-sm rounded-md cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed hover:bg-gray-700 transition-colors"
           >
             {isSubmitting ? 'Signing in…' : 'Sign in'}
           </button>
