@@ -2,25 +2,13 @@ import 'dotenv/config';
 import { hashPassword } from 'better-auth/crypto';
 import prisma from '../src/lib/prisma';
 
-async function main() {
-  const email = process.env.ADMIN_EMAIL;
-  const password = process.env.ADMIN_PASSWORD;
-
-  if (!email || !password) {
-    throw new Error('ADMIN_EMAIL and ADMIN_PASSWORD must be set in .env');
-  }
-
+async function seedUser(email: string, name: string, role: 'admin' | 'agent', password: string) {
   const hashed = await hashPassword(password);
 
   const user = await prisma.user.upsert({
     where: { email },
-    update: { role: 'admin' },
-    create: {
-      email,
-      name: 'Admin',
-      emailVerified: true,
-      role: 'admin',
-    },
+    update: { role },
+    create: { email, name, emailVerified: true, role },
   });
 
   await prisma.account.upsert({
@@ -34,7 +22,19 @@ async function main() {
     },
   });
 
-  console.log(`Admin seeded: ${email}`);
+  console.log(`Seeded ${role}: ${email}`);
+}
+
+async function main() {
+  const adminEmail = process.env.ADMIN_EMAIL;
+  const adminPassword = process.env.ADMIN_PASSWORD;
+
+  if (!adminEmail || !adminPassword) {
+    throw new Error('ADMIN_EMAIL and ADMIN_PASSWORD must be set in .env');
+  }
+
+  await seedUser(adminEmail, 'Admin', 'admin', adminPassword);
+  await seedUser('agent@example.com', 'Agent', 'agent', adminPassword);
 }
 
 main()
