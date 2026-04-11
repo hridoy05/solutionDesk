@@ -4,6 +4,11 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { authClient } from '../lib/auth-client';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const loginSchema = z.object({
   email: z.email('Enter a valid email address'),
@@ -39,51 +44,52 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="w-full max-w-sm p-8 bg-white rounded-xl border border-gray-200">
-        <h1 className="text-2xl font-semibold mb-1">SolutionDesk</h1>
-        <p className="text-sm text-gray-500 mb-6">Sign in to your account</p>
+    <div className="min-h-screen flex items-center justify-center bg-muted/40">
+      <Card className="w-full max-w-sm">
+        <CardHeader>
+          <CardTitle className="text-2xl">SolutionDesk</CardTitle>
+          <CardDescription>Sign in to your account</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                {...register('email')}
+                aria-invalid={!!errors.email}
+              />
+              {errors.email && (
+                <p className="text-destructive text-xs">{errors.email.message}</p>
+              )}
+            </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1">
-            <label htmlFor="email" className="text-sm font-medium">Email</label>
-            <input
-              id="email"
-              type="email"
-              {...register('email')}
-              className={`px-3 py-2 text-sm rounded-md border ${errors.email ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:ring-2 focus:ring-gray-900`}
-            />
-            {errors.email && (
-              <span className="text-red-600 text-xs">{errors.email.message}</span>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                {...register('password')}
+                aria-invalid={!!errors.password}
+              />
+              {errors.password && (
+                <p className="text-destructive text-xs">{errors.password.message}</p>
+              )}
+            </div>
+
+            {errors.root && (
+              <Alert variant="destructive">
+                <AlertDescription>{errors.root.message}</AlertDescription>
+              </Alert>
             )}
-          </div>
 
-          <div className="flex flex-col gap-1">
-            <label htmlFor="password" className="text-sm font-medium">Password</label>
-            <input
-              id="password"
-              type="password"
-              {...register('password')}
-              className={`px-3 py-2 text-sm rounded-md border ${errors.password ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:ring-2 focus:ring-gray-900`}
-            />
-            {errors.password && (
-              <span className="text-red-600 text-xs">{errors.password.message}</span>
-            )}
-          </div>
-
-          {errors.root && (
-            <p className="text-red-600 text-sm">{errors.root.message}</p>
-          )}
-
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="py-2 bg-gray-900 text-white text-sm rounded-md cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed hover:bg-gray-700 transition-colors"
-          >
-            {isSubmitting ? 'Signing in…' : 'Sign in'}
-          </button>
-        </form>
-      </div>
+            <Button type="submit" disabled={isSubmitting} className="w-full">
+              {isSubmitting ? 'Signing in…' : 'Sign in'}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }

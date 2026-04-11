@@ -77,6 +77,34 @@ Always use context7 before writing code that touches any library — training da
 
 Use for: Express, React, React Router, Prisma, Vite, Anthropic SDK, SendGrid, and any other dependency. Do not skip this for library-specific syntax, config, or migration questions.
 
+## Authentication
+
+**Library:** [Better Auth](https://www.better-auth.com/) — session-based, stored in PostgreSQL via Prisma adapter.
+
+### Server-side
+
+- **Auth instance:** `server/src/lib/auth.ts` — configured with `emailAndPassword` (sign-up disabled; users are seeded), PostgreSQL adapter, and a custom `role` field (`'admin' | 'agent'`, default `'agent'`).
+- **Route handler:** `app.all('/api/auth/*', toNodeHandler(auth))` in `app.ts` — must be registered **before** `express.json()`.
+- **Session guard middleware:** `server/src/middleware/requireAuth.ts` — calls `auth.api.getSession()` and attaches the result to `req.authSession`. Returns `401` if no session.
+- **Protected route example:** `GET /api/me` — uses `requireAuth`, reads `req.authSession.user.id`.
+- **Required env var:** `BETTER_AUTH_SECRET` (min 32 chars). Also needs `CLIENT_URL` for trusted origins.
+
+### Client-side
+
+- **Auth client:** `client/src/lib/auth-client.ts` — `createAuthClient()` from `better-auth/react`, no config needed (Vite proxy forwards `/api/auth/*` to the server).
+- **Session hook:** `authClient.useSession()` — returns `{ data: session, isPending }`.
+- **Sign in:** `authClient.signIn.email({ email, password })` — returns `{ error }`.
+- **Sign out:** `authClient.signOut()`.
+- **Route protection:** `client/src/components/ProtectedRoute.tsx` — wraps routes that require a session; redirects to `/login` if unauthenticated.
+
+### Roles
+
+Two roles exist: `admin` and `agent`. The role is stored as a string field on the `user` table (Better Auth additional field). No role-based middleware exists yet — access control per role is a future phase.
+
+### Sign-up
+
+Sign-up is **disabled** (`disableSignUp: true`). Users must be seeded via the seed script in `server/`.
+
 ## Implementation Phases
 
-See `implementation-plan.md` for the full phased plan. Phase 1 (monorepo setup, Express + React + TypeScript) is complete. Prisma and database setup are deferred to a later phase. Next is Phase 2: authentication (login page, session-based auth middleware, route protection).
+See `implementation-plan.md` for the full phased plan. Phase 1 (monorepo setup) and Phase 2 (authentication) are complete. Next phases cover ticket management, AI integration, and email.
