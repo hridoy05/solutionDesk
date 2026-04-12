@@ -105,6 +105,28 @@ Two roles exist: `admin` and `agent`. The role is stored as a string field on th
 
 Sign-up is **disabled** (`disableSignUp: true`). Users must be seeded via the seed script in `server/`.
 
+## E2E Testing
+
+**IMPORTANT: Never write Playwright tests directly. Always delegate to the `playwright-e2e-tester` agent.**
+
+Use the Agent tool with `subagent_type: "playwright-e2e-tester"` in these situations:
+
+| Situation | Example user message |
+|-----------|----------------------|
+| User asks for E2E tests explicitly | "Write tests for the login flow" |
+| A feature was just implemented | "I just finished ticket creation" |
+| User asks for test coverage | "Can you add coverage for agent management?" |
+| Proactively after a significant flow is complete | Auth, tickets, roles, email |
+
+**How to invoke:**
+```
+Agent({
+  subagent_type: "playwright-e2e-tester",
+  description: "Write E2E tests for <feature>",
+  prompt: "Write Playwright E2E tests for <feature>. <context about what was just built>."
+})
+```
+
 ## Implementation Phases
 
 See `implementation-plan.md` for the full phased plan. Phase 1 (monorepo setup) and Phase 2 (authentication) are complete. Next phases cover ticket management, AI integration, and email.

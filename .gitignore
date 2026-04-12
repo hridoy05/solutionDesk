@@ -3,9 +3,17 @@ dist/
 build/
 .env
 .env.local
+.env.test
 .DS_Store
 *.log
 
 # Claude Code internal files
 .agents/
+.claude/agent-memory/
 skills-lock.json
+
+# Playwright E2E
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
