@@ -6,6 +6,6 @@ export default function AdminRoute() {
 
   if (isPending) return <div className="min-h-screen flex items-center justify-center text-muted-foreground text-sm">Loading…</div>;
   if (!session) return <Navigate to="/login" replace />;
-  if (session.user.role !== 'admin') return <Navigate to="/" replace />;
+  if ((session.user as { role?: string }).role !== 'admin') return <Navigate to="/" replace />;
   return <Outlet />;
 }
