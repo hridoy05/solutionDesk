@@ -53,9 +53,25 @@ Planned directory layout inside `server/src/`:
 
 ## Client Architecture
 
-Entry: `client/src/main.tsx` → renders `<App />`.  
+Entry: `client/src/main.tsx` → renders `<App />` wrapped in `QueryClientProvider`.  
 Routing: react-router-dom v6 (BrowserRouter + Routes).  
 `App.tsx` is the root component and router shell.
+
+### Data Fetching
+
+- **HTTP client:** `axios` — use for all API calls with `{ withCredentials: true }` so session cookies are sent.
+- **Server state:** `@tanstack/react-query` (`useQuery`, `useMutation`) — use for all data fetching and caching. The `QueryClient` is created in `main.tsx` and provided globally via `QueryClientProvider`.
+
+```ts
+// Standard pattern for a GET endpoint
+const { data, isPending, isError } = useQuery({
+  queryKey: ['resource'],
+  queryFn: () =>
+    axios.get<Resource[]>('/api/resource', { withCredentials: true }).then((res) => res.data),
+});
+```
+
+Do **not** use `useEffect` + `useState` for server data — use `useQuery` instead.
 
 ## Environment
 
