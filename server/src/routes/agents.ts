@@ -8,7 +8,7 @@ import { requireAdmin } from '../middleware/requireAdmin';
 
 const router = Router();
 
-router.get('/', requireAuth, requireAdmin, async (_req, res) => {
+router.get('/', requireAuth, async (_req, res) => {
   const agents = await prisma.user.findMany({
     where: { role: Role.agent },
     select: { id: true, name: true, email: true, createdAt: true },

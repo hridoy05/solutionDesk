@@ -1,10 +1,12 @@
 import { Link, useParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { ArrowLeft } from 'lucide-react';
 import { TicketStatus, TicketCategory } from '../lib/constants';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Skeleton } from '../components/ui/skeleton';
+
+type Agent = { id: string; name: string; email: string; createdAt: string };
 
 type Ticket = {
   id: string;
@@ -14,6 +16,8 @@ type Ticket = {
   fromName: string | null;
   status: TicketStatus;
   category: TicketCategory | null;
+  assignedAgentId: string | null;
+  assignedAgent: { id: string; name: string } | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -30,6 +34,9 @@ const categoryLabel: Record<TicketCategory, string> = {
   [TicketCategory.refund_request]: 'Refund Request',
 };
 
+const SELECT_CLASS =
+  'flex h-8 rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50';
+
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
@@ -41,11 +48,28 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 export default function TicketDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const queryClient = useQueryClient();
 
   const { data: ticket, isPending, isError } = useQuery({
     queryKey: ['ticket', id],
     queryFn: () =>
-      axios.get<Ticket>(`/api/tickets/${id}`, { withCredentials: true }).then((res) => res.data),
+      axios.get<Ticket>(`/api/tickets/${id}`, { withCredentials: true }).then((r) => r.data),
+  });
+
+  const { data: agents = [] } = useQuery({
+    queryKey: ['agents'],
+    queryFn: () =>
+      axios.get<Agent[]>('/api/agents', { withCredentials: true }).then((r) => r.data),
+  });
+
+  const { mutate: assign, isPending: isAssigning, isError: assignError } = useMutation({
+    mutationFn: (assignedAgentId: string | null) =>
+      axios
+        .patch<Ticket>(`/api/tickets/${id}`, { assignedAgentId }, { withCredentials: true })
+        .then((r) => r.data),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(['ticket', id], updated);
+    },
   });
 
   return (
@@ -98,6 +122,24 @@ export default function TicketDetailPage() {
               </Field>
               <Field label="Updated">
                 <span className="text-sm">{new Date(ticket.updatedAt).toLocaleString()}</span>
+              </Field>
+              <Field label="Assigned Agent">
+                <div className="flex flex-col gap-1">
+                  <select
+                    className={SELECT_CLASS}
+                    value={ticket.assignedAgentId ?? ''}
+                    disabled={isAssigning}
+                    onChange={(e) => assign(e.target.value || null)}
+                  >
+                    <option value="">Unassigned</option>
+                    {agents.map((a) => (
+                      <option key={a.id} value={a.id}>{a.name}</option>
+                    ))}
+                  </select>
+                  {assignError && (
+                    <span className="text-xs text-destructive">Failed to update assignment.</span>
+                  )}
+                </div>
               </Field>
             </dl>
 

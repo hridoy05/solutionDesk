@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { TicketStatus, TicketCategory } from '@prisma/client';
+import { Role, TicketStatus, TicketCategory } from '@prisma/client';
 import prisma from '../lib/prisma';
 import { requireAuth } from '../middleware/requireAuth';
 
@@ -52,11 +52,40 @@ router.get('/', requireAuth, async (req, res) => {
 router.get('/:id', requireAuth, async (req, res) => {
   const ticket = await prisma.ticket.findUnique({
     where: { id: req.params.id },
+    include: { assignedAgent: { select: { id: true, name: true } } },
   });
   if (!ticket) {
     res.status(404).json({ error: 'Ticket not found' });
     return;
   }
+  res.json(ticket);
+});
+
+const patchSchema = z.object({
+  assignedAgentId: z.string().nullable(),
+});
+
+router.patch('/:id', requireAuth, async (req, res) => {
+  const parsed = patchSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: 'assignedAgentId must be a string or null' });
+    return;
+  }
+  const { assignedAgentId } = parsed.data;
+
+  if (assignedAgentId !== null) {
+    const agent = await prisma.user.findUnique({ where: { id: assignedAgentId } });
+    if (!agent || agent.role !== Role.agent) {
+      res.status(400).json({ error: 'Invalid agent' });
+      return;
+    }
+  }
+
+  const ticket = await prisma.ticket.update({
+    where: { id: req.params.id },
+    data: { assignedAgentId },
+    include: { assignedAgent: { select: { id: true, name: true } } },
+  });
   res.json(ticket);
 });
 
