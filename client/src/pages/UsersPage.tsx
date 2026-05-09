@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Skeleton } from '../components/ui/skeleton';
+import { Button } from '../components/ui/button';
 import {
   Table,
   TableBody,
@@ -10,6 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from '../components/ui/table';
+import CreateUserModal from '../components/CreateUserModal';
 
 type User = {
   id: string;
@@ -20,6 +23,8 @@ type User = {
 };
 
 export default function UsersPage() {
+  const [modalOpen, setModalOpen] = useState(false);
+
   const { data: users = [], isPending, isError } = useQuery({
     queryKey: ['users'],
     queryFn: () =>
@@ -28,7 +33,11 @@ export default function UsersPage() {
 
   return (
     <div className="p-8 max-w-5xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6">Users</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-3xl font-bold">Users</h1>
+        <Button onClick={() => setModalOpen(true)}>Add User</Button>
+      </div>
+      <CreateUserModal open={modalOpen} onOpenChange={setModalOpen} />
       <Card>
         <CardHeader>
           <CardTitle>All Users</CardTitle>

@@ -117,6 +117,13 @@ Use for: Express, React, React Router, Prisma, Vite, Anthropic SDK, SendGrid, an
 
 Two roles exist: `admin` and `agent`. The role is stored as a string field on the `user` table (Better Auth additional field). No role-based middleware exists yet — access control per role is a future phase.
 
+**Always use the Prisma `Role` enum** when referencing roles in server code — never hardcode the strings `'admin'` or `'agent'`:
+
+```ts
+import { Role } from '@prisma/client';
+// Role.admin, Role.agent
+```
+
 ### Sign-up
 
 Sign-up is **disabled** (`disableSignUp: true`). Users must be seeded via the seed script in `server/`.
