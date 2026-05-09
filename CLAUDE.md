@@ -53,9 +53,25 @@ Planned directory layout inside `server/src/`:
 
 ## Client Architecture
 
-Entry: `client/src/main.tsx` → renders `<App />`.  
+Entry: `client/src/main.tsx` → renders `<App />` wrapped in `QueryClientProvider`.  
 Routing: react-router-dom v6 (BrowserRouter + Routes).  
 `App.tsx` is the root component and router shell.
+
+### Data Fetching
+
+- **HTTP client:** `axios` — use for all API calls with `{ withCredentials: true }` so session cookies are sent.
+- **Server state:** `@tanstack/react-query` (`useQuery`, `useMutation`) — use for all data fetching and caching. The `QueryClient` is created in `main.tsx` and provided globally via `QueryClientProvider`.
+
+```ts
+// Standard pattern for a GET endpoint
+const { data, isPending, isError } = useQuery({
+  queryKey: ['resource'],
+  queryFn: () =>
+    axios.get<Resource[]>('/api/resource', { withCredentials: true }).then((res) => res.data),
+});
+```
+
+Do **not** use `useEffect` + `useState` for server data — use `useQuery` instead.
 
 ## Environment
 
@@ -101,9 +117,45 @@ Use for: Express, React, React Router, Prisma, Vite, Anthropic SDK, SendGrid, an
 
 Two roles exist: `admin` and `agent`. The role is stored as a string field on the `user` table (Better Auth additional field). No role-based middleware exists yet — access control per role is a future phase.
 
+**Always use the Prisma `Role` enum** when referencing roles in server code — never hardcode the strings `'admin'` or `'agent'`:
+
+```ts
+import { Role } from '@prisma/client';
+// Role.admin, Role.agent
+```
+
 ### Sign-up
 
 Sign-up is **disabled** (`disableSignUp: true`). Users must be seeded via the seed script in `server/`.
+
+## Component Testing
+
+**Stack:** Vitest + React Testing Library. Config lives in `vite.config.ts` (`test` block). Setup file: `client/src/test/setup.ts` (imports `@testing-library/jest-dom`).
+
+**Test files:** co-locate with the page/component — `Foo.test.tsx` next to `Foo.tsx`.
+
+**Shared render helper:** always use `renderWithProviders` from `client/src/test/utils.tsx` instead of RTL's `render` directly. It wraps the component in `QueryClientProvider` with `retry: false`.
+
+```ts
+import { screen, waitFor } from '@testing-library/react';
+import { renderWithProviders } from '../test/utils';
+import UsersPage from './UsersPage';
+```
+
+**Mocking axios:** use `vi.mock('axios')` at the top of the file, then `vi.mocked(axios, true).get.mockResolvedValue({ data: [...] })` per test. Clear mocks in `afterEach` with `vi.clearAllMocks()`.
+
+**What to test per page:**
+- Loading/skeleton state (pending — mock with `new Promise(() => {})`)
+- Success state (data renders correctly)
+- Error state (`mockRejectedValue`)
+- Empty state (empty array response)
+- Correct API call (endpoint + options like `withCredentials`)
+
+**Run tests:**
+```bash
+npm test          # from client/ — single run
+npm run test:watch  # watch mode
+```
 
 ## E2E Testing
 

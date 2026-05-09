@@ -8,6 +8,7 @@ import { auth } from './lib/auth';
 import { requireAuth } from './middleware/requireAuth';
 import prisma from './lib/prisma';
 import agentsRouter from './routes/agents';
+import usersRouter from './routes/users';
 
 const app = express();
 
@@ -31,6 +32,7 @@ app.all('/api/auth/*', toNodeHandler(auth));
 app.use(express.json());
 
 app.use('/api/agents', agentsRouter);
+app.use('/api/users', usersRouter);
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });

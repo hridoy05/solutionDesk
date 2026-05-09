@@ -13,7 +13,7 @@ export default function Navbar() {
 
   return (
     <nav className="flex items-center justify-between px-6 py-3 bg-card border-b border-border">
-      <span className="text-lg font-bold">SolutionDesk</span>
+      <Link to="/" className="text-lg font-bold hover:opacity-80 transition-opacity">SolutionDesk</Link>
       {session && (
         <div className="flex items-center gap-4">
           {session.user.role === 'admin' && (
