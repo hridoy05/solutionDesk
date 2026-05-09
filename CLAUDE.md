@@ -121,6 +121,35 @@ Two roles exist: `admin` and `agent`. The role is stored as a string field on th
 
 Sign-up is **disabled** (`disableSignUp: true`). Users must be seeded via the seed script in `server/`.
 
+## Component Testing
+
+**Stack:** Vitest + React Testing Library. Config lives in `vite.config.ts` (`test` block). Setup file: `client/src/test/setup.ts` (imports `@testing-library/jest-dom`).
+
+**Test files:** co-locate with the page/component — `Foo.test.tsx` next to `Foo.tsx`.
+
+**Shared render helper:** always use `renderWithProviders` from `client/src/test/utils.tsx` instead of RTL's `render` directly. It wraps the component in `QueryClientProvider` with `retry: false`.
+
+```ts
+import { screen, waitFor } from '@testing-library/react';
+import { renderWithProviders } from '../test/utils';
+import UsersPage from './UsersPage';
+```
+
+**Mocking axios:** use `vi.mock('axios')` at the top of the file, then `vi.mocked(axios, true).get.mockResolvedValue({ data: [...] })` per test. Clear mocks in `afterEach` with `vi.clearAllMocks()`.
+
+**What to test per page:**
+- Loading/skeleton state (pending — mock with `new Promise(() => {})`)
+- Success state (data renders correctly)
+- Error state (`mockRejectedValue`)
+- Empty state (empty array response)
+- Correct API call (endpoint + options like `withCredentials`)
+
+**Run tests:**
+```bash
+npm test          # from client/ — single run
+npm run test:watch  # watch mode
+```
+
 ## E2E Testing
 
 **IMPORTANT: Never write Playwright tests directly. Always delegate to the `playwright-e2e-tester` agent.**
