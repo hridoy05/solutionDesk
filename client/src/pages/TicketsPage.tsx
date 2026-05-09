@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import {
@@ -118,6 +119,7 @@ type PaginatedTickets = {
 const PAGE_SIZE = 10;
 
 export default function TicketsPage() {
+  const navigate = useNavigate();
   const [sorting, setSorting] = useState<SortingState>([{ id: 'createdAt', desc: true }]);
   const [statusFilter, setStatusFilter] = useState<TicketStatus | ''>('');
   const [categoryFilter, setCategoryFilter] = useState<TicketCategory | ''>('');
@@ -225,7 +227,11 @@ export default function TicketsPage() {
                   </TableRow>
                 ) : (
                   table.getRowModel().rows.map((row) => (
-                    <TableRow key={row.id}>
+                    <TableRow
+                      key={row.id}
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => navigate(`/tickets/${row.original.id}`)}
+                    >
                       {row.getVisibleCells().map((cell) => (
                         <TableCell key={cell.id}>
                           {flexRender(cell.column.columnDef.cell, cell.getContext())}
