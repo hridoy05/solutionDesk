@@ -1,8 +1,19 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
+import {
+  useReactTable,
+  getCoreRowModel,
+  flexRender,
+  type ColumnDef,
+  type SortingState,
+  type Column,
+} from '@tanstack/react-table';
+import { ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
 import { TicketStatus, TicketCategory } from '../lib/constants';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Skeleton } from '../components/ui/skeleton';
+import { Button } from '../components/ui/button';
 import {
   Table,
   TableBody,
@@ -34,11 +45,87 @@ const categoryLabel: Record<TicketCategory, string> = {
   [TicketCategory.refund_request]: 'Refund',
 };
 
+function SortHeader({ column, children }: { column: Column<Ticket>; children: React.ReactNode }) {
+  const sorted = column.getIsSorted();
+  return (
+    <Button variant="ghost" size="sm" className="-ml-3 h-8" onClick={column.getToggleSortingHandler()}>
+      {children}
+      {sorted === 'asc' ? (
+        <ArrowUp className="ml-1 h-3 w-3" />
+      ) : sorted === 'desc' ? (
+        <ArrowDown className="ml-1 h-3 w-3" />
+      ) : (
+        <ArrowUpDown className="ml-1 h-3 w-3 opacity-40" />
+      )}
+    </Button>
+  );
+}
+
+const columns: ColumnDef<Ticket>[] = [
+  {
+    accessorKey: 'subject',
+    header: ({ column }) => <SortHeader column={column}>Subject</SortHeader>,
+    cell: ({ getValue }) => <span className="font-medium">{getValue<string>()}</span>,
+  },
+  {
+    accessorKey: 'fromEmail',
+    header: ({ column }) => <SortHeader column={column}>From</SortHeader>,
+    cell: ({ row }) => (
+      <span className="text-muted-foreground">
+        {row.original.fromName
+          ? `${row.original.fromName} <${row.original.fromEmail}>`
+          : row.original.fromEmail}
+      </span>
+    ),
+  },
+  {
+    accessorKey: 'status',
+    header: ({ column }) => <SortHeader column={column}>Status</SortHeader>,
+    cell: ({ getValue }) => {
+      const s = getValue<TicketStatus>();
+      return <span className={statusStyle[s]}>{s}</span>;
+    },
+  },
+  {
+    accessorKey: 'category',
+    header: ({ column }) => <SortHeader column={column}>Category</SortHeader>,
+    cell: ({ getValue }) => {
+      const c = getValue<TicketCategory | null>();
+      return <span className="text-muted-foreground">{c ? categoryLabel[c] : '—'}</span>;
+    },
+  },
+  {
+    accessorKey: 'createdAt',
+    header: ({ column }) => <SortHeader column={column}>Date</SortHeader>,
+    cell: ({ getValue }) => (
+      <span className="text-muted-foreground">
+        {new Date(getValue<string>()).toLocaleDateString()}
+      </span>
+    ),
+  },
+];
+
 export default function TicketsPage() {
+  const [sorting, setSorting] = useState<SortingState>([{ id: 'createdAt', desc: true }]);
+
+  const sortBy = sorting[0]?.id ?? 'createdAt';
+  const sortOrder = sorting[0]?.desc === false ? 'asc' : 'desc';
+
   const { data: tickets = [], isPending, isError } = useQuery({
-    queryKey: ['tickets'],
+    queryKey: ['tickets', sortBy, sortOrder],
     queryFn: () =>
-      axios.get<Ticket[]>('/api/tickets', { withCredentials: true }).then((res) => res.data),
+      axios
+        .get<Ticket[]>('/api/tickets', { params: { sortBy, sortOrder }, withCredentials: true })
+        .then((res) => res.data),
+  });
+
+  const table = useReactTable({
+    data: tickets,
+    columns,
+    state: { sorting },
+    onSortingChange: setSorting,
+    manualSorting: true,
+    getCoreRowModel: getCoreRowModel(),
   });
 
   return (
@@ -52,67 +139,47 @@ export default function TicketsPage() {
           <CardTitle>All Tickets</CardTitle>
         </CardHeader>
         <CardContent>
-          {isPending && (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Subject</TableHead>
-                  <TableHead>From</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Date</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <TableRow key={i}>
-                    <TableCell><Skeleton className="h-4 w-48" /></TableCell>
-                    <TableCell><Skeleton className="h-4 w-40" /></TableCell>
-                    <TableCell><Skeleton className="h-5 w-14 rounded-full" /></TableCell>
-                    <TableCell><Skeleton className="h-5 w-16 rounded-full" /></TableCell>
-                    <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
           {isError && (
             <p className="text-sm text-destructive py-4 text-center">Failed to load tickets.</p>
           )}
-          {!isPending && !isError && (
+          {!isError && (
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Subject</TableHead>
-                  <TableHead>From</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Date</TableHead>
-                </TableRow>
+                {table.getHeaderGroups().map((hg) => (
+                  <TableRow key={hg.id}>
+                    {hg.headers.map((header) => (
+                      <TableHead key={header.id}>
+                        {flexRender(header.column.columnDef.header, header.getContext())}
+                      </TableHead>
+                    ))}
+                  </TableRow>
+                ))}
               </TableHeader>
               <TableBody>
-                {tickets.length === 0 ? (
+                {isPending ? (
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <TableRow key={i}>
+                      <TableCell><Skeleton className="h-4 w-48" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-40" /></TableCell>
+                      <TableCell><Skeleton className="h-5 w-14 rounded-full" /></TableCell>
+                      <TableCell><Skeleton className="h-5 w-16 rounded-full" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                    </TableRow>
+                  ))
+                ) : table.getRowModel().rows.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center text-muted-foreground">
+                    <TableCell colSpan={columns.length} className="text-center text-muted-foreground">
                       No tickets yet.
                     </TableCell>
                   </TableRow>
                 ) : (
-                  tickets.map((ticket) => (
-                    <TableRow key={ticket.id}>
-                      <TableCell className="font-medium">{ticket.subject}</TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {ticket.fromName ? `${ticket.fromName} <${ticket.fromEmail}>` : ticket.fromEmail}
-                      </TableCell>
-                      <TableCell>
-                        <span className={statusStyle[ticket.status]}>{ticket.status}</span>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {ticket.category ? categoryLabel[ticket.category] : '—'}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {new Date(ticket.createdAt).toLocaleDateString()}
-                      </TableCell>
+                  table.getRowModel().rows.map((row) => (
+                    <TableRow key={row.id}>
+                      {row.getVisibleCells().map((cell) => (
+                        <TableCell key={cell.id}>
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </TableCell>
+                      ))}
                     </TableRow>
                   ))
                 )}
