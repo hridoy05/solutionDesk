@@ -105,17 +105,29 @@ const columns: ColumnDef<Ticket>[] = [
   },
 ];
 
+const SELECT_CLASS = 'flex h-8 rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50';
+
 export default function TicketsPage() {
   const [sorting, setSorting] = useState<SortingState>([{ id: 'createdAt', desc: true }]);
+  const [statusFilter, setStatusFilter] = useState<TicketStatus | ''>('');
+  const [categoryFilter, setCategoryFilter] = useState<TicketCategory | ''>('');
 
   const sortBy = sorting[0]?.id ?? 'createdAt';
   const sortOrder = sorting[0]?.desc === false ? 'asc' : 'desc';
 
   const { data: tickets = [], isPending, isError } = useQuery({
-    queryKey: ['tickets', sortBy, sortOrder],
+    queryKey: ['tickets', sortBy, sortOrder, statusFilter, categoryFilter],
     queryFn: () =>
       axios
-        .get<Ticket[]>('/api/tickets', { params: { sortBy, sortOrder }, withCredentials: true })
+        .get<Ticket[]>('/api/tickets', {
+          params: {
+            sortBy,
+            sortOrder,
+            ...(statusFilter   && { status: statusFilter }),
+            ...(categoryFilter && { category: categoryFilter }),
+          },
+          withCredentials: true,
+        })
         .then((res) => res.data),
   });
 
@@ -139,6 +151,28 @@ export default function TicketsPage() {
           <CardTitle>All Tickets</CardTitle>
         </CardHeader>
         <CardContent>
+          <div className="flex gap-3 mb-4">
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as TicketStatus | '')}
+              className={SELECT_CLASS}
+            >
+              <option value="">All statuses</option>
+              <option value={TicketStatus.open}>Open</option>
+              <option value={TicketStatus.resolved}>Resolved</option>
+              <option value={TicketStatus.closed}>Closed</option>
+            </select>
+            <select
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value as TicketCategory | '')}
+              className={SELECT_CLASS}
+            >
+              <option value="">All categories</option>
+              <option value={TicketCategory.general_question}>General</option>
+              <option value={TicketCategory.technical_question}>Technical</option>
+              <option value={TicketCategory.refund_request}>Refund</option>
+            </select>
+          </div>
           {isError && (
             <p className="text-sm text-destructive py-4 text-center">Failed to load tickets.</p>
           )}
