@@ -64,3 +64,27 @@ model Verification {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 }
+
+enum TicketStatus {
+  open
+  resolved
+  closed
+}
+
+enum TicketCategory {
+  general_question
+  technical_question
+  refund_request
+}
+
+model Ticket {
+  id        String          @id @default(cuid())
+  subject   String
+  body      String
+  fromEmail String
+  fromName  String?
+  status    TicketStatus    @default(open)
+  category  TicketCategory?
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+}

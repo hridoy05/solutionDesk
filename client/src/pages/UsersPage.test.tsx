@@ -2,6 +2,7 @@ import { screen, waitFor } from '@testing-library/react';
 import axios from 'axios';
 import { renderWithProviders } from '../test/utils';
 import UsersPage from './UsersPage';
+import { Role } from '../lib/constants';
 
 vi.mock('axios');
 const mockedAxios = vi.mocked(axios, true);
@@ -11,14 +12,14 @@ const MOCK_USERS = [
     id: '1',
     name: 'Alice Admin',
     email: 'alice@example.com',
-    role: 'admin' as const,
+    role: Role.admin,
     createdAt: '2024-01-15T10:00:00.000Z',
   },
   {
     id: '2',
     name: 'Bob Agent',
     email: 'bob@example.com',
-    role: 'agent' as const,
+    role: Role.agent,
     createdAt: '2024-03-20T08:30:00.000Z',
   },
 ];
@@ -57,8 +58,8 @@ describe('UsersPage', () => {
 
     await waitFor(() => screen.getByText('Alice Admin'));
 
-    const adminBadge = screen.getByText('admin');
-    const agentBadge = screen.getByText('agent');
+    const adminBadge = screen.getByText(Role.admin);
+    const agentBadge = screen.getByText(Role.agent);
 
     expect(adminBadge).toHaveClass('bg-purple-100', 'text-purple-800');
     expect(agentBadge).toHaveClass('bg-blue-100', 'text-blue-800');

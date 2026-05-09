@@ -1,8 +1,10 @@
 import 'dotenv/config';
 import { hashPassword } from 'better-auth/crypto';
+import { Role } from '@prisma/client';
 import prisma from '../src/lib/prisma';
+import { CREDENTIAL_PROVIDER } from '../src/lib/constants';
 
-async function seedUser(email: string, name: string, role: 'admin' | 'agent', password: string) {
+async function seedUser(email: string, name: string, role: Role, password: string) {
   const hashed = await hashPassword(password);
 
   const user = await prisma.user.upsert({
@@ -12,11 +14,11 @@ async function seedUser(email: string, name: string, role: 'admin' | 'agent', pa
   });
 
   await prisma.account.upsert({
-    where: { providerId_accountId: { providerId: 'credential', accountId: email } },
+    where: { providerId_accountId: { providerId: CREDENTIAL_PROVIDER, accountId: email } },
     update: { password: hashed },
     create: {
       accountId: email,
-      providerId: 'credential',
+      providerId: CREDENTIAL_PROVIDER,
       userId: user.id,
       password: hashed,
     },
@@ -37,8 +39,8 @@ async function main() {
     throw new Error('ADMIN_PASSWORD must be at least 8 characters');
   }
 
-  await seedUser(adminEmail, 'Admin', 'admin', adminPassword);
-  await seedUser('agent@example.com', 'Agent', 'agent', agentPassword || adminPassword);
+  await seedUser(adminEmail, 'Admin', Role.admin, adminPassword);
+  await seedUser('agent@example.com', 'Agent', Role.agent, agentPassword || adminPassword);
 }
 
 main()

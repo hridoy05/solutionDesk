@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { authClient } from '../lib/auth-client';
 import { Button } from '@/components/ui/button';
+import { Role } from '../lib/constants';
 
 export default function Navbar() {
   const { data: session } = authClient.useSession();
@@ -16,7 +17,8 @@ export default function Navbar() {
       <Link to="/" className="text-lg font-bold hover:opacity-80 transition-opacity">SolutionDesk</Link>
       {session && (
         <div className="flex items-center gap-4">
-          {session.user.role === 'admin' && (
+          <Link to="/tickets" className="text-sm hover:underline">Tickets</Link>
+          {session.user.role === Role.admin && (
             <Link to="/users" className="text-sm hover:underline">Users</Link>
           )}
           <span className="text-sm text-muted-foreground">{session.user.name}</span>
