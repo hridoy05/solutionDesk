@@ -12,6 +12,7 @@ const schema = z.object({
   name: z.string().trim().min(1, 'Name is required'),
   email: z.email('Enter a valid email address'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
+  role: z.enum(['admin', 'agent']),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -30,7 +31,7 @@ export default function CreateUserModal({ open, onOpenChange }: Props) {
     reset,
     setError,
     formState: { errors, isSubmitting },
-  } = useForm<FormData>({ resolver: zodResolver(schema) });
+  } = useForm<FormData>({ resolver: zodResolver(schema), defaultValues: { role: 'agent' } });
 
   const { mutateAsync } = useMutation({
     mutationFn: (data: FormData) =>
@@ -96,6 +97,18 @@ export default function CreateUserModal({ open, onOpenChange }: Props) {
             {errors.root && (
               <p className="text-destructive text-sm">{errors.root.message}</p>
             )}
+
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="new-role">Role</Label>
+              <select
+                id="new-role"
+                {...register('role')}
+                className="flex h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+              >
+                <option value="agent">Agent</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
 
             <div className="flex justify-end gap-2 mt-2">
               <Dialog.Close

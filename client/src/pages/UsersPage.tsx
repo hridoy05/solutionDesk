@@ -13,6 +13,8 @@ import {
   TableRow,
 } from '../components/ui/table';
 import CreateUserModal from '../components/CreateUserModal';
+import EditUserModal from '../components/EditUserModal';
+import DeleteUserDialog from '../components/DeleteUserDialog';
 
 type User = {
   id: string;
@@ -23,7 +25,9 @@ type User = {
 };
 
 export default function UsersPage() {
-  const [modalOpen, setModalOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [deletingUser, setDeletingUser] = useState<User | null>(null);
 
   const { data: users = [], isPending, isError } = useQuery({
     queryKey: ['users'],
@@ -35,9 +39,13 @@ export default function UsersPage() {
     <div className="p-8 max-w-5xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold">Users</h1>
-        <Button onClick={() => setModalOpen(true)}>Add User</Button>
+        <Button onClick={() => setCreateOpen(true)}>Add User</Button>
       </div>
-      <CreateUserModal open={modalOpen} onOpenChange={setModalOpen} />
+
+      <CreateUserModal open={createOpen} onOpenChange={setCreateOpen} />
+      <EditUserModal user={editingUser} onClose={() => setEditingUser(null)} />
+      <DeleteUserDialog user={deletingUser} onClose={() => setDeletingUser(null)} />
+
       <Card>
         <CardHeader>
           <CardTitle>All Users</CardTitle>
@@ -51,6 +59,7 @@ export default function UsersPage() {
                   <TableHead>Email</TableHead>
                   <TableHead>Role</TableHead>
                   <TableHead>Joined</TableHead>
+                  <TableHead />
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -60,6 +69,7 @@ export default function UsersPage() {
                     <TableCell><Skeleton className="h-4 w-48" /></TableCell>
                     <TableCell><Skeleton className="h-5 w-14 rounded-full" /></TableCell>
                     <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                    <TableCell />
                   </TableRow>
                 ))}
               </TableBody>
@@ -76,12 +86,13 @@ export default function UsersPage() {
                   <TableHead>Email</TableHead>
                   <TableHead>Role</TableHead>
                   <TableHead>Joined</TableHead>
+                  <TableHead />
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {users.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={4} className="text-center text-muted-foreground">
+                    <TableCell colSpan={5} className="text-center text-muted-foreground">
                       No users found.
                     </TableCell>
                   </TableRow>
@@ -103,6 +114,24 @@ export default function UsersPage() {
                       </TableCell>
                       <TableCell className="text-muted-foreground">
                         {new Date(user.createdAt).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setEditingUser(user)}
+                          >
+                            Edit
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => setDeletingUser(user)}
+                          >
+                            Delete
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))
