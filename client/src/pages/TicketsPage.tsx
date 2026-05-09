@@ -107,22 +107,35 @@ const columns: ColumnDef<Ticket>[] = [
 
 const SELECT_CLASS = 'flex h-8 rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50';
 
+type PaginatedTickets = {
+  data: Ticket[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+};
+
+const PAGE_SIZE = 10;
+
 export default function TicketsPage() {
   const [sorting, setSorting] = useState<SortingState>([{ id: 'createdAt', desc: true }]);
   const [statusFilter, setStatusFilter] = useState<TicketStatus | ''>('');
   const [categoryFilter, setCategoryFilter] = useState<TicketCategory | ''>('');
+  const [page, setPage] = useState(1);
 
   const sortBy = sorting[0]?.id ?? 'createdAt';
   const sortOrder = sorting[0]?.desc === false ? 'asc' : 'desc';
 
-  const { data: tickets = [], isPending, isError } = useQuery({
-    queryKey: ['tickets', sortBy, sortOrder, statusFilter, categoryFilter],
+  const { data: response, isPending, isError } = useQuery({
+    queryKey: ['tickets', sortBy, sortOrder, statusFilter, categoryFilter, page],
     queryFn: () =>
       axios
-        .get<Ticket[]>('/api/tickets', {
+        .get<PaginatedTickets>('/api/tickets', {
           params: {
             sortBy,
             sortOrder,
+            page,
+            pageSize: PAGE_SIZE,
             ...(statusFilter   && { status: statusFilter }),
             ...(categoryFilter && { category: categoryFilter }),
           },
@@ -131,11 +144,15 @@ export default function TicketsPage() {
         .then((res) => res.data),
   });
 
+  const tickets = response?.data ?? [];
+  const totalPages = response?.totalPages ?? 1;
+  const total = response?.total ?? 0;
+
   const table = useReactTable({
     data: tickets,
     columns,
     state: { sorting },
-    onSortingChange: setSorting,
+    onSortingChange: (updater) => { setSorting(updater); setPage(1); },
     manualSorting: true,
     getCoreRowModel: getCoreRowModel(),
   });
@@ -154,7 +171,7 @@ export default function TicketsPage() {
           <div className="flex gap-3 mb-4">
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as TicketStatus | '')}
+              onChange={(e) => { setStatusFilter(e.target.value as TicketStatus | ''); setPage(1); }}
               className={SELECT_CLASS}
             >
               <option value="">All statuses</option>
@@ -164,7 +181,7 @@ export default function TicketsPage() {
             </select>
             <select
               value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value as TicketCategory | '')}
+              onChange={(e) => { setCategoryFilter(e.target.value as TicketCategory | ''); setPage(1); }}
               className={SELECT_CLASS}
             >
               <option value="">All categories</option>
@@ -219,6 +236,20 @@ export default function TicketsPage() {
                 )}
               </TableBody>
             </Table>
+          )}
+          {!isError && !isPending && (
+            <div className="flex items-center justify-between mt-4">
+              <p className="text-sm text-muted-foreground">{total} ticket{total !== 1 ? 's' : ''}</p>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage((p) => p - 1)}>
+                  Previous
+                </Button>
+                <span className="text-sm text-muted-foreground">Page {page} of {totalPages}</span>
+                <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
+                  Next
+                </Button>
+              </div>
+            </div>
           )}
         </CardContent>
       </Card>
