@@ -61,19 +61,29 @@ router.get('/:id', requireAuth, async (req, res) => {
   res.json(ticket);
 });
 
-const patchSchema = z.object({
-  assignedAgentId: z.string().nullable(),
-});
+const patchSchema = z
+  .object({
+    status: z.enum([TicketStatus.open, TicketStatus.resolved, TicketStatus.closed]),
+    category: z
+      .enum([
+        TicketCategory.general_question,
+        TicketCategory.technical_question,
+        TicketCategory.refund_request,
+      ])
+      .nullable(),
+    assignedAgentId: z.string().nullable(),
+  })
+  .partial();
 
 router.patch('/:id', requireAuth, async (req, res) => {
   const parsed = patchSchema.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: 'assignedAgentId must be a string or null' });
+    res.status(400).json({ error: parsed.error.issues });
     return;
   }
-  const { assignedAgentId } = parsed.data;
+  const { status, category, assignedAgentId } = parsed.data;
 
-  if (assignedAgentId !== null) {
+  if (assignedAgentId !== undefined && assignedAgentId !== null) {
     const agent = await prisma.user.findUnique({ where: { id: assignedAgentId } });
     if (!agent || agent.role !== Role.agent) {
       res.status(400).json({ error: 'Invalid agent' });
@@ -81,9 +91,14 @@ router.patch('/:id', requireAuth, async (req, res) => {
     }
   }
 
+  const updateData: Record<string, unknown> = {};
+  if (status !== undefined) updateData.status = status;
+  if (category !== undefined) updateData.category = category;
+  if (assignedAgentId !== undefined) updateData.assignedAgentId = assignedAgentId;
+
   const ticket = await prisma.ticket.update({
     where: { id: req.params.id },
-    data: { assignedAgentId },
+    data: updateData,
     include: { assignedAgent: { select: { id: true, name: true } } },
   });
   res.json(ticket);

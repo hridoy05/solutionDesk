@@ -22,25 +22,21 @@ type Ticket = {
   updatedAt: string;
 };
 
-const statusStyle: Record<TicketStatus, string> = {
-  [TicketStatus.open]: 'inline-block rounded-full px-2.5 py-0.5 text-xs font-medium bg-blue-100 text-blue-800',
-  [TicketStatus.resolved]: 'inline-block rounded-full px-2.5 py-0.5 text-xs font-medium bg-green-100 text-green-800',
-  [TicketStatus.closed]: 'inline-block rounded-full px-2.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-600',
-};
-
-const categoryLabel: Record<TicketCategory, string> = {
-  [TicketCategory.general_question]: 'General Question',
-  [TicketCategory.technical_question]: 'Technical Question',
-  [TicketCategory.refund_request]: 'Refund Request',
+type PatchPayload = {
+  status?: TicketStatus;
+  category?: TicketCategory | null;
+  assignedAgentId?: string | null;
 };
 
 const SELECT_CLASS =
-  'flex h-8 rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50';
+  'flex h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50';
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">{label}</dt>
+      <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">
+        {label}
+      </dt>
       <dd>{children}</dd>
     </div>
   );
@@ -62,10 +58,14 @@ export default function TicketDetailPage() {
       axios.get<Agent[]>('/api/agents', { withCredentials: true }).then((r) => r.data),
   });
 
-  const { mutate: assign, isPending: isAssigning, isError: assignError } = useMutation({
-    mutationFn: (assignedAgentId: string | null) =>
+  const {
+    mutate: update,
+    isPending: isSaving,
+    isError: saveError,
+  } = useMutation({
+    mutationFn: (payload: PatchPayload) =>
       axios
-        .patch<Ticket>(`/api/tickets/${id}`, { assignedAgentId }, { withCredentials: true })
+        .patch<Ticket>(`/api/tickets/${id}`, payload, { withCredentials: true })
         .then((r) => r.data),
     onSuccess: (updated) => {
       queryClient.setQueryData(['ticket', id], updated);
@@ -105,46 +105,83 @@ export default function TicketDetailPage() {
             <CardTitle>{ticket.subject}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-5">
+            {saveError && (
+              <p className="text-xs text-destructive">Failed to save changes.</p>
+            )}
+
             <dl className="grid grid-cols-2 gap-x-8 gap-y-5 sm:grid-cols-3">
               <Field label="Status">
-                <span className={statusStyle[ticket.status]}>{ticket.status}</span>
+                <select
+                  className={SELECT_CLASS}
+                  value={ticket.status}
+                  disabled={isSaving}
+                  onChange={(e) => update({ status: e.target.value as TicketStatus })}
+                >
+                  <option value={TicketStatus.open}>Open</option>
+                  <option value={TicketStatus.resolved}>Resolved</option>
+                  <option value={TicketStatus.closed}>Closed</option>
+                </select>
               </Field>
+
               <Field label="Category">
-                <span className="text-sm">{ticket.category ? categoryLabel[ticket.category] : '—'}</span>
+                <select
+                  className={SELECT_CLASS}
+                  value={ticket.category ?? ''}
+                  disabled={isSaving}
+                  onChange={(e) =>
+                    update({ category: (e.target.value as TicketCategory) || null })
+                  }
+                >
+                  <option value="">Uncategorized</option>
+                  <option value={TicketCategory.general_question}>General Question</option>
+                  <option value={TicketCategory.technical_question}>Technical Question</option>
+                  <option value={TicketCategory.refund_request}>Refund Request</option>
+                </select>
               </Field>
+
+              <Field label="Assigned Agent">
+                <select
+                  className={SELECT_CLASS}
+                  value={ticket.assignedAgentId ?? ''}
+                  disabled={isSaving}
+                  onChange={(e) => update({ assignedAgentId: e.target.value || null })}
+                >
+                  <option value="">Unassigned</option>
+                  {agents.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.name}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+
               <Field label="From">
-                <span className="text-sm">
-                  {ticket.fromName ? `${ticket.fromName} <${ticket.fromEmail}>` : ticket.fromEmail}
+                <span className="text-sm font-medium">
+                  {ticket.fromName ?? <span className="text-muted-foreground">—</span>}
                 </span>
               </Field>
+
+              <Field label="Email">
+                <span className="text-sm text-muted-foreground">{ticket.fromEmail}</span>
+              </Field>
+
               <Field label="Created">
-                <span className="text-sm">{new Date(ticket.createdAt).toLocaleString()}</span>
+                <span className="text-sm text-muted-foreground">
+                  {new Date(ticket.createdAt).toLocaleString()}
+                </span>
               </Field>
+
               <Field label="Updated">
-                <span className="text-sm">{new Date(ticket.updatedAt).toLocaleString()}</span>
-              </Field>
-              <Field label="Assigned Agent">
-                <div className="flex flex-col gap-1">
-                  <select
-                    className={SELECT_CLASS}
-                    value={ticket.assignedAgentId ?? ''}
-                    disabled={isAssigning}
-                    onChange={(e) => assign(e.target.value || null)}
-                  >
-                    <option value="">Unassigned</option>
-                    {agents.map((a) => (
-                      <option key={a.id} value={a.id}>{a.name}</option>
-                    ))}
-                  </select>
-                  {assignError && (
-                    <span className="text-xs text-destructive">Failed to update assignment.</span>
-                  )}
-                </div>
+                <span className="text-sm text-muted-foreground">
+                  {new Date(ticket.updatedAt).toLocaleString()}
+                </span>
               </Field>
             </dl>
 
             <div>
-              <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Message</dt>
+              <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
+                Message
+              </dt>
               <div className="rounded-lg border bg-muted/40 p-4 text-sm whitespace-pre-wrap leading-relaxed">
                 {ticket.body}
               </div>
