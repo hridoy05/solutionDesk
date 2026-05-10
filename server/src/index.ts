@@ -1,6 +1,8 @@
 import 'dotenv/config';
 import app from './app';
 import prisma from './lib/prisma';
+import boss from './lib/boss';
+import { registerClassifyWorker } from './workers/classify';
 
 const PORT = process.env.PORT || 5000;
 
@@ -19,6 +21,10 @@ async function start() {
     console.error('Database connection failed:', err);
     process.exit(1);
   }
+
+  await boss.start();
+  console.log('Job queue started');
+  await registerClassifyWorker();
 
   app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);

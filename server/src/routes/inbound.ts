@@ -2,6 +2,8 @@ import { Router } from 'express';
 import multer from 'multer';
 import { TicketStatus } from '@prisma/client';
 import prisma from '../lib/prisma';
+import boss from '../lib/boss';
+import { CLASSIFY_QUEUE } from '../workers/classify';
 
 const upload = multer({ storage: multer.memoryStorage() });
 const router = Router();
@@ -27,7 +29,8 @@ router.post('/', upload.none(), async (req, res) => {
   }
 
   const { fromEmail, fromName } = parseFrom(from);
-  await prisma.ticket.create({ data: { subject, body, fromEmail, fromName, status: TicketStatus.open } });
+  const ticket = await prisma.ticket.create({ data: { subject, body, fromEmail, fromName, status: TicketStatus.open } });
+  await boss.send(CLASSIFY_QUEUE, { ticketId: ticket.id, subject, body });
   res.status(200).send();
 });
 

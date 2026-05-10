@@ -15,6 +15,7 @@
     "db:seed:test": "dotenvx run --env-file .env.test --overload -- ts-node --transpile-only prisma/seed.ts"
   },
   "dependencies": {
+    "@google/genai": "^2.0.1",
     "@prisma/client": "^5.14.0",
     "better-auth": "^1.6.2",
     "cors": "^2.8.5",
@@ -24,6 +25,7 @@
     "helmet": "^7.1.0",
     "morgan": "^1.10.0",
     "multer": "^2.1.1",
+    "pg-boss": "^12.18.2",
     "zod": "^4.4.3"
   },
   "devDependencies": {

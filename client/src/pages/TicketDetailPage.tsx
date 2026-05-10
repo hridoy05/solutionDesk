@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
-import { ArrowLeft, Send } from 'lucide-react';
+import { ArrowLeft, Send, Sparkles } from 'lucide-react';
 import { TicketStatus, TicketCategory, SenderType } from '../lib/constants';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Skeleton } from '../components/ui/skeleton';
@@ -82,6 +82,7 @@ export default function TicketDetailPage() {
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
   const [replyBody, setReplyBody] = useState('');
+  const [summary, setSummary] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const { data: ticket, isPending, isError } = useQuery({
@@ -103,6 +104,25 @@ export default function TicketDetailPage() {
         .then((r) => r.data),
     onSuccess: (updated) => {
       queryClient.setQueryData(['ticket', id], updated);
+    },
+  });
+
+  const { mutate: summarize, isPending: isSummarizing, isError: summarizeError } = useMutation({
+    mutationFn: () =>
+      axios
+        .post<{ summary: string }>(`/api/tickets/${id}/summarize`, {}, { withCredentials: true })
+        .then((r) => r.data),
+    onSuccess: ({ summary: text }) => setSummary(text),
+  });
+
+  const { mutate: polishReply, isPending: isPolishing, isError: polishError } = useMutation({
+    mutationFn: (body: string) =>
+      axios
+        .post<{ polishedBody: string }>(`/api/tickets/${id}/polish`, { body }, { withCredentials: true })
+        .then((r) => r.data),
+    onSuccess: ({ polishedBody }) => {
+      setReplyBody(polishedBody);
+      textareaRef.current?.focus();
     },
   });
 
@@ -254,10 +274,48 @@ export default function TicketDetailPage() {
               ))}
             </CardContent>
 
-            {/* Compose */}
+            {/* Summary */}
             <div className="border-t px-6 py-4">
-              {replyError && (
-                <p className="text-xs text-destructive mb-2">Failed to send reply.</p>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">AI Summary</p>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={isSummarizing}
+                  onClick={() => summarize()}
+                  className="gap-1.5 text-xs h-7 px-2.5"
+                >
+                  <Sparkles className={`h-3.5 w-3.5 ${isSummarizing ? 'animate-pulse' : ''}`} />
+                  {summary ? 'Regenerate' : 'Summarize'}
+                </Button>
+              </div>
+              {summarizeError && (
+                <p className="text-xs text-destructive">Failed to generate summary.</p>
+              )}
+              {isSummarizing && (
+                <div className="space-y-2">
+                  <Skeleton className="h-3.5 w-full" />
+                  <Skeleton className="h-3.5 w-5/6" />
+                  <Skeleton className="h-3.5 w-4/6" />
+                </div>
+              )}
+              {summary && !isSummarizing && (
+                <div className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                  {summary}
+                </div>
+              )}
+              {!summary && !isSummarizing && !summarizeError && (
+                <p className="text-xs text-muted-foreground/60 italic">Click Summarize to get an AI overview of this ticket.</p>
+              )}
+            </div>
+
+          {/* Compose */}
+            <div className="border-t px-6 py-4">
+              {(replyError || polishError) && (
+                <p className="text-xs text-destructive mb-2">
+                  {polishError ? 'Failed to polish reply.' : 'Failed to send reply.'}
+                </p>
               )}
               <form onSubmit={handleReplySubmit} className="flex gap-2 items-end">
                 <textarea
@@ -269,14 +327,26 @@ export default function TicketDetailPage() {
                   }}
                   placeholder="Write a reply…"
                   rows={3}
-                  disabled={isSendingReply}
+                  disabled={isSendingReply || isPolishing}
                   className="flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none resize-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50"
                 />
-                <Button type="submit" size="sm" disabled={isSendingReply || !replyBody.trim()}>
-                  <Send className="h-4 w-4" />
-                </Button>
+                <div className="flex flex-col gap-1.5">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={isPolishing || isSendingReply || !replyBody.trim()}
+                    onClick={() => polishReply(replyBody)}
+                    title="Polish with AI"
+                  >
+                    <Sparkles className={`h-4 w-4 ${isPolishing ? 'animate-pulse' : ''}`} />
+                  </Button>
+                  <Button type="submit" size="sm" disabled={isSendingReply || isPolishing || !replyBody.trim()}>
+                    <Send className="h-4 w-4" />
+                  </Button>
+                </div>
               </form>
-              <p className="text-xs text-muted-foreground mt-1.5">⌘ Enter to send</p>
+              <p className="text-xs text-muted-foreground mt-1.5">⌘ Enter to send · ✨ Polish with AI</p>
             </div>
           </Card>
         </div>
