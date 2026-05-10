@@ -82,6 +82,7 @@ export default function TicketDetailPage() {
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
   const [replyBody, setReplyBody] = useState('');
+  const [summary, setSummary] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const { data: ticket, isPending, isError } = useQuery({
@@ -104,6 +105,14 @@ export default function TicketDetailPage() {
     onSuccess: (updated) => {
       queryClient.setQueryData(['ticket', id], updated);
     },
+  });
+
+  const { mutate: summarize, isPending: isSummarizing, isError: summarizeError } = useMutation({
+    mutationFn: () =>
+      axios
+        .post<{ summary: string }>(`/api/tickets/${id}/summarize`, {}, { withCredentials: true })
+        .then((r) => r.data),
+    onSuccess: ({ summary: text }) => setSummary(text),
   });
 
   const { mutate: polishReply, isPending: isPolishing, isError: polishError } = useMutation({
@@ -265,7 +274,43 @@ export default function TicketDetailPage() {
               ))}
             </CardContent>
 
-            {/* Compose */}
+            {/* Summary */}
+            <div className="border-t px-6 py-4">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">AI Summary</p>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={isSummarizing}
+                  onClick={() => summarize()}
+                  className="gap-1.5 text-xs h-7 px-2.5"
+                >
+                  <Sparkles className={`h-3.5 w-3.5 ${isSummarizing ? 'animate-pulse' : ''}`} />
+                  {summary ? 'Regenerate' : 'Summarize'}
+                </Button>
+              </div>
+              {summarizeError && (
+                <p className="text-xs text-destructive">Failed to generate summary.</p>
+              )}
+              {isSummarizing && (
+                <div className="space-y-2">
+                  <Skeleton className="h-3.5 w-full" />
+                  <Skeleton className="h-3.5 w-5/6" />
+                  <Skeleton className="h-3.5 w-4/6" />
+                </div>
+              )}
+              {summary && !isSummarizing && (
+                <div className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                  {summary}
+                </div>
+              )}
+              {!summary && !isSummarizing && !summarizeError && (
+                <p className="text-xs text-muted-foreground/60 italic">Click Summarize to get an AI overview of this ticket.</p>
+              )}
+            </div>
+
+          {/* Compose */}
             <div className="border-t px-6 py-4">
               {(replyError || polishError) && (
                 <p className="text-xs text-destructive mb-2">

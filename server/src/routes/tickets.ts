@@ -138,6 +138,64 @@ router.patch('/:id', requireAuth, async (req, res) => {
   res.json(ticket);
 });
 
+router.post('/:id/summarize', requireAuth, async (req, res) => {
+  if (!process.env.GEMINI_API_KEY) {
+    res.status(503).json({ error: 'AI summarization is not configured' });
+    return;
+  }
+
+  const ticket = await prisma.ticket.findUnique({
+    where: { id: req.params.id },
+    select: {
+      subject: true,
+      body: true,
+      fromName: true,
+      fromEmail: true,
+      replies: {
+        orderBy: { createdAt: 'asc' },
+        select: { body: true, senderType: true, user: { select: { name: true } }, createdAt: true },
+      },
+    },
+  });
+  if (!ticket) {
+    res.status(404).json({ error: 'Ticket not found' });
+    return;
+  }
+
+  const thread = [
+    `Customer (${ticket.fromName ?? ticket.fromEmail}): ${ticket.body}`,
+    ...ticket.replies.map((r) => {
+      const sender = r.senderType === SenderType.agent ? `Agent (${r.user?.name ?? 'Agent'})` : `Customer (${ticket.fromName ?? ticket.fromEmail})`;
+      return `${sender}: ${r.body}`;
+    }),
+  ].join('\n\n');
+
+  const prompt = `Summarize the following customer support ticket conversation in 3–5 concise bullet points. Focus on: the customer's issue, what was done or offered, and the current state. Be brief and factual.
+
+Subject: ${ticket.subject}
+
+Conversation:
+${thread}`;
+
+  try {
+    const response = await gemini.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+    });
+
+    const summary = response.text?.trim();
+    if (!summary) {
+      res.status(502).json({ error: 'No response from AI' });
+      return;
+    }
+
+    res.json({ summary });
+  } catch (err) {
+    console.error('[summarize] Gemini error:', err);
+    res.status(502).json({ error: 'AI request failed' });
+  }
+});
+
 router.post('/:id/polish', requireAuth, async (req, res) => {
   const { body: draftBody } = req.body as { body?: string };
   if (!draftBody?.trim()) {
