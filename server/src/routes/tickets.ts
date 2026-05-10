@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { Role, TicketStatus, TicketCategory } from '@prisma/client';
+import { Role, SenderType, TicketStatus, TicketCategory } from '@prisma/client';
 import prisma from '../lib/prisma';
 import { requireAuth } from '../middleware/requireAuth';
 
@@ -52,13 +52,44 @@ router.get('/', requireAuth, async (req, res) => {
 router.get('/:id', requireAuth, async (req, res) => {
   const ticket = await prisma.ticket.findUnique({
     where: { id: req.params.id },
-    include: { assignedAgent: { select: { id: true, name: true } } },
+    include: {
+      assignedAgent: { select: { id: true, name: true } },
+      replies: {
+        orderBy: { createdAt: 'asc' },
+        include: { user: { select: { id: true, name: true } } },
+      },
+    },
   });
   if (!ticket) {
     res.status(404).json({ error: 'Ticket not found' });
     return;
   }
   res.json(ticket);
+});
+
+router.post('/:id/replies', requireAuth, async (req, res) => {
+  const { body } = req.body as { body?: string };
+  if (!body?.trim()) {
+    res.status(400).json({ error: 'body is required' });
+    return;
+  }
+
+  const ticket = await prisma.ticket.findUnique({ where: { id: req.params.id }, select: { id: true } });
+  if (!ticket) {
+    res.status(404).json({ error: 'Ticket not found' });
+    return;
+  }
+
+  const reply = await prisma.reply.create({
+    data: {
+      ticketId: req.params.id,
+      body: body.trim(),
+      senderType: SenderType.agent,
+      userId: req.authSession.user.id,
+    },
+    include: { user: { select: { id: true, name: true } } },
+  });
+  res.status(201).json(reply);
 });
 
 const patchSchema = z

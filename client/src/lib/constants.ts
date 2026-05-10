@@ -1,3 +1,9 @@
+export const SenderType = {
+  agent: 'agent',
+  customer: 'customer',
+} as const;
+export type SenderType = (typeof SenderType)[keyof typeof SenderType];
+
 export const Role = {
   admin: 'admin',
   agent: 'agent',
