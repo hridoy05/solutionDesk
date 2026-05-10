@@ -117,11 +117,13 @@ Use for: Express, React, React Router, Prisma, Vite, Anthropic SDK, SendGrid, an
 
 Two roles exist: `admin` and `agent`. The role is stored as a string field on the `user` table (Better Auth additional field). No role-based middleware exists yet — access control per role is a future phase.
 
-**Always use the Prisma `Role` enum** when referencing roles in server code — never hardcode the strings `'admin'` or `'agent'`:
+**Always use Prisma enums** when referencing enum values in server code — never hardcode the string literals:
 
 ```ts
-import { Role } from '@prisma/client';
+import { Role, TicketStatus, TicketCategory } from '@prisma/client';
 // Role.admin, Role.agent
+// TicketStatus.open, TicketStatus.resolved, TicketStatus.closed
+// TicketCategory.general_question, TicketCategory.technical_question, TicketCategory.refund_request
 ```
 
 ### Sign-up

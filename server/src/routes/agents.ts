@@ -1,14 +1,16 @@
 import { Router } from 'express';
 import { hashPassword } from 'better-auth/crypto';
+import { Role } from '@prisma/client';
 import prisma from '../lib/prisma';
+import { CREDENTIAL_PROVIDER } from '../lib/constants';
 import { requireAuth } from '../middleware/requireAuth';
 import { requireAdmin } from '../middleware/requireAdmin';
 
 const router = Router();
 
-router.get('/', requireAuth, requireAdmin, async (_req, res) => {
+router.get('/', requireAuth, async (_req, res) => {
   const agents = await prisma.user.findMany({
-    where: { role: 'agent' },
+    where: { role: Role.agent },
     select: { id: true, name: true, email: true, createdAt: true },
     orderBy: { createdAt: 'desc' },
   });
@@ -31,11 +33,11 @@ router.post('/', requireAuth, requireAdmin, async (req, res) => {
 
   const hashed = await hashPassword(password);
   const user = await prisma.user.create({
-    data: { name, email, emailVerified: true, role: 'agent' },
+    data: { name, email, emailVerified: true, role: Role.agent },
     select: { id: true, name: true, email: true, createdAt: true },
   });
   await prisma.account.create({
-    data: { accountId: email, providerId: 'credential', userId: user.id, password: hashed },
+    data: { accountId: email, providerId: CREDENTIAL_PROVIDER, userId: user.id, password: hashed },
   });
 
   res.status(201).json(user);

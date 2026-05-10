@@ -13,16 +13,18 @@ enum Role {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String
-  email         String    @unique
-  emailVerified Boolean   @default(false)
-  image         String?
-  role          Role      @default(agent)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  sessions      Session[]
-  accounts      Account[]
+  id              String    @id @default(cuid())
+  name            String
+  email           String    @unique
+  emailVerified   Boolean   @default(false)
+  image           String?
+  role            Role      @default(agent)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  sessions        Session[]
+  accounts        Account[]
+  assignedTickets Ticket[]  @relation("TicketAssignee")
+  replies         Reply[]
 }
 
 model Session {
@@ -63,4 +65,47 @@ model Verification {
   expiresAt  DateTime
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+}
+
+enum TicketStatus {
+  open
+  resolved
+  closed
+}
+
+enum TicketCategory {
+  general_question
+  technical_question
+  refund_request
+}
+
+model Ticket {
+  id               String          @id @default(cuid())
+  subject          String
+  body             String
+  fromEmail        String
+  fromName         String?
+  status           TicketStatus    @default(open)
+  category         TicketCategory?
+  assignedAgentId  String?
+  assignedAgent    User?           @relation("TicketAssignee", fields: [assignedAgentId], references: [id], onDelete: SetNull)
+  replies          Reply[]
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+}
+
+enum SenderType {
+  agent
+  customer
+}
+
+model Reply {
+  id         String     @id @default(cuid())
+  ticketId   String
+  ticket     Ticket     @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  body       String
+  senderType SenderType
+  userId     String?
+  user       User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt  DateTime   @default(now())
 }

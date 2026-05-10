@@ -3,6 +3,7 @@ import { hashPassword } from 'better-auth/crypto';
 import { z } from 'zod';
 import { Role } from '@prisma/client';
 import prisma from '../lib/prisma';
+import { CREDENTIAL_PROVIDER } from '../lib/constants';
 import { requireAuth } from '../middleware/requireAuth';
 import { requireAdmin } from '../middleware/requireAdmin';
 
@@ -53,7 +54,7 @@ router.post('/', requireAuth, requireAdmin, async (req, res) => {
   });
 
   await prisma.account.create({
-    data: { accountId: email, providerId: 'credential', userId: user.id, password: hashed },
+    data: { accountId: email, providerId: CREDENTIAL_PROVIDER, userId: user.id, password: hashed },
   });
 
   res.status(201).json(user);

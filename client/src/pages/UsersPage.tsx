@@ -15,12 +15,13 @@ import {
 import CreateUserModal from '../components/CreateUserModal';
 import EditUserModal from '../components/EditUserModal';
 import DeleteUserDialog from '../components/DeleteUserDialog';
+import { Role } from '../lib/constants';
 
 type User = {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'agent';
+  role: Role;
   createdAt: string;
 };
 
@@ -104,7 +105,7 @@ export default function UsersPage() {
                       <TableCell>
                         <span
                           className={
-                            user.role === 'admin'
+                            user.role === Role.admin
                               ? 'inline-block rounded-full px-2 py-0.5 text-xs font-medium bg-purple-100 text-purple-800'
                               : 'inline-block rounded-full px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-800'
                           }

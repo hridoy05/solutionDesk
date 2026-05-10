@@ -8,13 +8,14 @@ import axios from 'axios';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
+import { Role } from '../lib/constants';
 
-type User = { id: string; name: string; email: string; role: 'admin' | 'agent' };
+type User = { id: string; name: string; email: string; role: Role };
 
 const schema = z.object({
   name: z.string().trim().min(1, 'Name is required'),
   email: z.email('Enter a valid email address'),
-  role: z.enum(['admin', 'agent']),
+  role: z.enum([Role.admin, Role.agent]),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -83,8 +84,8 @@ export default function EditUserModal({ user, onClose }: Props) {
                 {...register('role')}
                 className="flex h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
               >
-                <option value="agent">Agent</option>
-                <option value="admin">Admin</option>
+                <option value={Role.agent}>Agent</option>
+                <option value={Role.admin}>Admin</option>
               </select>
             </div>
 

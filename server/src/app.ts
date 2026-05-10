@@ -9,6 +9,8 @@ import { requireAuth } from './middleware/requireAuth';
 import prisma from './lib/prisma';
 import agentsRouter from './routes/agents';
 import usersRouter from './routes/users';
+import inboundRouter from './routes/inbound';
+import ticketsRouter from './routes/tickets';
 
 const app = express();
 
@@ -29,10 +31,13 @@ const authLimiter = rateLimit({
 app.use('/api/auth/', authLimiter);
 app.all('/api/auth/*', toNodeHandler(auth));
 
+app.use('/api/inbound/email', inboundRouter);
+
 app.use(express.json());
 
 app.use('/api/agents', agentsRouter);
 app.use('/api/users', usersRouter);
+app.use('/api/tickets', ticketsRouter);
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
