@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
-import { ArrowLeft, Send } from 'lucide-react';
+import { ArrowLeft, Send, Sparkles } from 'lucide-react';
 import { TicketStatus, TicketCategory, SenderType } from '../lib/constants';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Skeleton } from '../components/ui/skeleton';
@@ -103,6 +103,17 @@ export default function TicketDetailPage() {
         .then((r) => r.data),
     onSuccess: (updated) => {
       queryClient.setQueryData(['ticket', id], updated);
+    },
+  });
+
+  const { mutate: polishReply, isPending: isPolishing, isError: polishError } = useMutation({
+    mutationFn: (body: string) =>
+      axios
+        .post<{ polishedBody: string }>(`/api/tickets/${id}/polish`, { body }, { withCredentials: true })
+        .then((r) => r.data),
+    onSuccess: ({ polishedBody }) => {
+      setReplyBody(polishedBody);
+      textareaRef.current?.focus();
     },
   });
 
@@ -256,8 +267,10 @@ export default function TicketDetailPage() {
 
             {/* Compose */}
             <div className="border-t px-6 py-4">
-              {replyError && (
-                <p className="text-xs text-destructive mb-2">Failed to send reply.</p>
+              {(replyError || polishError) && (
+                <p className="text-xs text-destructive mb-2">
+                  {polishError ? 'Failed to polish reply.' : 'Failed to send reply.'}
+                </p>
               )}
               <form onSubmit={handleReplySubmit} className="flex gap-2 items-end">
                 <textarea
@@ -269,14 +282,26 @@ export default function TicketDetailPage() {
                   }}
                   placeholder="Write a reply…"
                   rows={3}
-                  disabled={isSendingReply}
+                  disabled={isSendingReply || isPolishing}
                   className="flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none resize-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50"
                 />
-                <Button type="submit" size="sm" disabled={isSendingReply || !replyBody.trim()}>
-                  <Send className="h-4 w-4" />
-                </Button>
+                <div className="flex flex-col gap-1.5">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={isPolishing || isSendingReply || !replyBody.trim()}
+                    onClick={() => polishReply(replyBody)}
+                    title="Polish with AI"
+                  >
+                    <Sparkles className={`h-4 w-4 ${isPolishing ? 'animate-pulse' : ''}`} />
+                  </Button>
+                  <Button type="submit" size="sm" disabled={isSendingReply || isPolishing || !replyBody.trim()}>
+                    <Send className="h-4 w-4" />
+                  </Button>
+                </div>
               </form>
-              <p className="text-xs text-muted-foreground mt-1.5">⌘ Enter to send</p>
+              <p className="text-xs text-muted-foreground mt-1.5">⌘ Enter to send · ✨ Polish with AI</p>
             </div>
           </Card>
         </div>

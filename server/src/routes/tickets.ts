@@ -1,10 +1,13 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { Role, SenderType, TicketStatus, TicketCategory } from '@prisma/client';
+import { GoogleGenAI } from '@google/genai';
 import prisma from '../lib/prisma';
 import { requireAuth } from '../middleware/requireAuth';
 
 const router = Router();
+
+const gemini = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY ?? '' });
 
 const querySchema = z.object({
   sortBy: z.enum(['subject', 'fromEmail', 'status', 'category', 'createdAt']).default('createdAt'),
@@ -133,6 +136,54 @@ router.patch('/:id', requireAuth, async (req, res) => {
     include: { assignedAgent: { select: { id: true, name: true } } },
   });
   res.json(ticket);
+});
+
+router.post('/:id/polish', requireAuth, async (req, res) => {
+  const { body: draftBody } = req.body as { body?: string };
+  if (!draftBody?.trim()) {
+    res.status(400).json({ error: 'body is required' });
+    return;
+  }
+
+  if (!process.env.GEMINI_API_KEY) {
+    res.status(503).json({ error: 'AI polishing is not configured' });
+    return;
+  }
+
+  const ticket = await prisma.ticket.findUnique({
+    where: { id: req.params.id },
+    select: { subject: true, body: true },
+  });
+  if (!ticket) {
+    res.status(404).json({ error: 'Ticket not found' });
+    return;
+  }
+
+  const prompt = `You are a professional customer support agent. Improve the following draft reply to make it clearer, more professional, and more empathetic — while preserving the original meaning and intent. Return only the improved reply text, with no preamble or explanation.
+
+Ticket subject: ${ticket.subject}
+Customer message: ${ticket.body}
+
+Draft reply:
+${draftBody.trim()}`;
+
+  try {
+    const response = await gemini.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+    });
+
+    const polishedBody = response.text?.trim();
+    if (!polishedBody) {
+      res.status(502).json({ error: 'No response from AI' });
+      return;
+    }
+
+    res.json({ polishedBody });
+  } catch (err) {
+    console.error('[polish] Gemini error:', err);
+    res.status(502).json({ error: 'AI request failed' });
+  }
 });
 
 export default router;
