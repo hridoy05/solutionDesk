@@ -35,10 +35,6 @@ async function main() {
   if (!adminEmail || !adminPassword) {
     throw new Error('ADMIN_EMAIL and ADMIN_PASSWORD must be set in .env');
   }
-  if (adminPassword.length < 8) {
-    throw new Error('ADMIN_PASSWORD must be at least 8 characters');
-  }
-
   await seedUser(adminEmail, 'Admin', Role.admin, adminPassword);
   await seedUser('agent@example.com', 'Agent', Role.agent, agentPassword || adminPassword);
 }

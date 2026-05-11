@@ -10,6 +10,7 @@ export type ClassifyJobData = {
 };
 
 export async function registerClassifyWorker() {
+  await boss.createQueue(CLASSIFY_QUEUE);
   await boss.work<ClassifyJobData>(CLASSIFY_QUEUE, async (jobs) => {
     for (const job of jobs) {
       await classifyTicket(job.data.ticketId, job.data.subject, job.data.body);

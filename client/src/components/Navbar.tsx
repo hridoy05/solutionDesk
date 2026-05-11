@@ -17,6 +17,7 @@ export default function Navbar() {
       <Link to="/" className="text-lg font-bold hover:opacity-80 transition-opacity">SolutionDesk</Link>
       {session && (
         <div className="flex items-center gap-4">
+          <Link to="/" className="text-sm hover:underline">Dashboard</Link>
           <Link to="/tickets" className="text-sm hover:underline">Tickets</Link>
           {session.user.role === Role.admin && (
             <Link to="/users" className="text-sm hover:underline">Users</Link>

@@ -11,6 +11,7 @@ import agentsRouter from './routes/agents';
 import usersRouter from './routes/users';
 import inboundRouter from './routes/inbound';
 import ticketsRouter from './routes/tickets';
+import dashboardRouter from './routes/dashboard';
 
 const app = express();
 
@@ -38,6 +39,7 @@ app.use(express.json());
 app.use('/api/agents', agentsRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/tickets', ticketsRouter);
+app.use('/api/dashboard', dashboardRouter);
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
