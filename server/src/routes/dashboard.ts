@@ -1,12 +1,12 @@
 import { Router } from 'express';
-import { TicketStatus } from '@prisma/client';
+import { TicketStatus, TicketCategory } from '@prisma/client';
 import prisma from '../lib/prisma';
 import { requireAuth } from '../middleware/requireAuth';
 
 const router = Router();
 
 router.get('/', requireAuth, async (_req, res) => {
-  const [totalTickets, openTickets, resolvedByAgentRaw, avgTimeRaw] = await Promise.all([
+  const [totalTickets, openTickets, resolvedByAgentRaw, avgTimeRaw, byCategoryRaw] = await Promise.all([
     prisma.ticket.count(),
     prisma.ticket.count({ where: { status: TicketStatus.open } }),
     prisma.ticket.groupBy({
@@ -23,7 +23,22 @@ router.get('/', requireAuth, async (_req, res) => {
       FROM "Ticket"
       WHERE status IN ('resolved', 'closed')
     `,
+    prisma.ticket.groupBy({
+      by: ['category'],
+      _count: { id: true },
+    }),
   ]);
+
+  const CATEGORY_LABELS: Record<string, string> = {
+    [TicketCategory.general_question]: 'General',
+    [TicketCategory.technical_question]: 'Technical',
+    [TicketCategory.refund_request]: 'Refund',
+  };
+
+  const byCategory = byCategoryRaw.map((r) => ({
+    category: r.category ? CATEGORY_LABELS[r.category] ?? r.category : 'Uncategorized',
+    count: r._count.id,
+  }));
 
   const agentIds = resolvedByAgentRaw
     .map((r) => r.assignedAgentId)
@@ -40,6 +55,7 @@ router.get('/', requireAuth, async (_req, res) => {
     totalTickets,
     openTickets,
     avgResolveTimeHours: avgTimeRaw[0]?.avg_hours ?? null,
+    byCategory,
     resolvedByAgent: resolvedByAgentRaw.map((r) => ({
       agentId: r.assignedAgentId!,
       agentName: agentMap[r.assignedAgentId!] ?? 'Unknown',

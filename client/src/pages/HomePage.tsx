@@ -1,6 +1,16 @@
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { Ticket, TicketCheck, Clock, Users } from 'lucide-react';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+} from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Skeleton } from '../components/ui/skeleton';
 
@@ -8,8 +18,11 @@ type DashboardData = {
   totalTickets: number;
   openTickets: number;
   avgResolveTimeHours: number | null;
+  byCategory: { category: string; count: number }[];
   resolvedByAgent: { agentId: string; agentName: string; count: number }[];
 };
+
+const BAR_COLORS = ['hsl(221,83%,53%)', 'hsl(142,71%,45%)', 'hsl(38,92%,50%)'];
 
 function formatAvgTime(hours: number | null): string {
   if (hours === null) return '—';
@@ -54,7 +67,7 @@ export default function HomePage() {
   });
 
   return (
-    <div className="p-8 max-w-5xl mx-auto space-y-8">
+    <div className="p-8 max-w-5xl mx-auto space-y-6">
       <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
 
       {isError && (
@@ -82,6 +95,58 @@ export default function HomePage() {
         />
       </div>
 
+      {/* Bar chart — tickets by category */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm font-medium text-muted-foreground">
+            Tickets by Category
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isPending ? (
+            <Skeleton className="h-48 w-full" />
+          ) : !data?.byCategory.length ? (
+            <p className="text-sm text-muted-foreground py-8 text-center">No ticket data yet.</p>
+          ) : (
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={data.byCategory} barCategoryGap="35%">
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                <XAxis
+                  dataKey="category"
+                  tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  allowDecimals={false}
+                  tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={28}
+                />
+                <Tooltip
+                  cursor={{ fill: 'hsl(var(--muted))', radius: 4 }}
+                  contentStyle={{
+                    background: 'hsl(var(--card))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: 8,
+                    fontSize: 13,
+                  }}
+                  labelStyle={{ color: 'hsl(var(--foreground))', fontWeight: 600 }}
+                  itemStyle={{ color: 'hsl(var(--muted-foreground))' }}
+                />
+                <Bar dataKey="count" name="Tickets" radius={[4, 4, 0, 0]} maxBarSize={80}>
+                  {data.byCategory.map((_, i) => (
+                    <Cell key={i} fill={BAR_COLORS[i % BAR_COLORS.length]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Resolved by agent table */}
       <Card>
         <CardHeader className="flex flex-row items-center gap-2 pb-2">
           <Users className="h-4 w-4 text-muted-foreground" />
