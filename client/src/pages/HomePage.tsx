@@ -22,7 +22,7 @@ type DashboardData = {
   resolvedByAgent: { agentId: string; agentName: string; count: number }[];
 };
 
-const BAR_COLORS = ['hsl(221,83%,53%)', 'hsl(142,71%,45%)', 'hsl(38,92%,50%)'];
+const BAR_COLORS = ['hsl(221,83%,53%)', 'hsl(142,71%,45%)', '#000000'];
 
 function formatAvgTime(hours: number | null): string {
   if (hours === null) return '—';
