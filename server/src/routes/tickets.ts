@@ -1,247 +1,170 @@
-import { Router } from 'express';
-import { z } from 'zod';
-import { Role, SenderType, TicketStatus, TicketCategory } from '@prisma/client';
-import { GoogleGenAI } from '@google/genai';
-import prisma from '../lib/prisma';
-import { requireAuth } from '../middleware/requireAuth';
+import { Router } from "express";
+import { requireAuth } from "../middleware/require-auth";
+import { validate } from "../lib/validate";
+import { parseId } from "../lib/parse-id";
+import { ticketListQuerySchema, updateTicketSchema } from "core/schemas/tickets.ts";
+import prisma from "../db";
+import type { Prisma } from "../generated/prisma/client";
+import { AI_AGENT_ID } from "core/constants/ai-agent.ts";
+
+interface TicketStatsRow {
+  totalTickets: bigint;
+  openTickets: bigint;
+  resolvedByAI: bigint;
+  aiResolutionRate: number;
+  avgResolutionTime: number;
+}
 
 const router = Router();
 
-const gemini = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY ?? '' });
+router.get("/stats", requireAuth, async (_req, res) => {
+  const [row] = await prisma.$queryRaw<
+    [TicketStatsRow]
+  >`SELECT * FROM get_ticket_stats(${AI_AGENT_ID})`;
 
-const querySchema = z.object({
-  sortBy: z.enum(['subject', 'fromEmail', 'status', 'category', 'createdAt']).default('createdAt'),
-  sortOrder: z.enum(['asc', 'desc']).default('desc'),
-  status: z.enum([TicketStatus.open, TicketStatus.resolved, TicketStatus.closed]).optional(),
-  category: z.enum([
-    TicketCategory.general_question,
-    TicketCategory.technical_question,
-    TicketCategory.refund_request,
-  ]).optional(),
-  page: z.coerce.number().int().min(1).default(1),
-  pageSize: z.coerce.number().int().min(1).max(100).default(10),
+  res.json({
+    totalTickets: Number(row.totalTickets),
+    openTickets: Number(row.openTickets),
+    resolvedByAI: Number(row.resolvedByAI),
+    aiResolutionRate: row.aiResolutionRate,
+    avgResolutionTime: row.avgResolutionTime,
+  });
 });
 
-router.get('/', requireAuth, async (req, res) => {
-  const { sortBy, sortOrder, status, category, page, pageSize } = querySchema.parse(req.query);
+router.get("/stats/daily-volume", requireAuth, async (_req, res) => {
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 29);
+  thirtyDaysAgo.setHours(0, 0, 0, 0);
 
-  const where = {
-    ...(status   && { status }),
-    ...(category && { category }),
-  };
+  const tickets = await prisma.ticket.findMany({
+    where: { createdAt: { gte: thirtyDaysAgo } },
+    select: { createdAt: true },
+  });
 
-  const [data, total] = await Promise.all([
+  // Build a map of date -> count
+  const countsByDate = new Map<string, number>();
+  for (const t of tickets) {
+    const dateKey = t.createdAt.toISOString().slice(0, 10);
+    countsByDate.set(dateKey, (countsByDate.get(dateKey) ?? 0) + 1);
+  }
+
+  // Fill in all 30 days (including zeros)
+  const data: { date: string; tickets: number }[] = [];
+  for (let i = 0; i < 30; i++) {
+    const d = new Date(thirtyDaysAgo);
+    d.setDate(d.getDate() + i);
+    const dateKey = d.toISOString().slice(0, 10);
+    data.push({ date: dateKey, tickets: countsByDate.get(dateKey) ?? 0 });
+  }
+
+  res.json({ data });
+});
+
+router.get("/", requireAuth, async (req, res) => {
+  const query = validate(ticketListQuerySchema, req.query, res);
+  if (!query) return;
+
+  const where: Prisma.TicketWhereInput = {};
+
+  if (query.status) {
+    where.status = query.status;
+  } else {
+    where.status = { in: ["open", "resolved", "closed"] };
+  }
+
+  if (query.category) {
+    where.category = query.category;
+  }
+
+  if (query.search) {
+    where.OR = [
+      { subject: { contains: query.search, mode: "insensitive" } },
+      { senderName: { contains: query.search, mode: "insensitive" } },
+      { senderEmail: { contains: query.search, mode: "insensitive" } },
+    ];
+  }
+
+  const [tickets, total] = await Promise.all([
     prisma.ticket.findMany({
-      where,
-      orderBy: { [sortBy]: sortOrder },
-      skip: (page - 1) * pageSize,
-      take: pageSize,
       select: {
         id: true,
         subject: true,
-        fromEmail: true,
-        fromName: true,
         status: true,
         category: true,
+        senderName: true,
+        senderEmail: true,
         createdAt: true,
       },
+      where,
+      orderBy: { [query.sortBy]: query.sortOrder },
+      skip: (query.page - 1) * query.pageSize,
+      take: query.pageSize,
     }),
     prisma.ticket.count({ where }),
   ]);
 
-  res.json({ data, total, page, pageSize, totalPages: Math.ceil(total / pageSize) });
+  res.json({ tickets, total, page: query.page, pageSize: query.pageSize });
 });
 
-router.get('/:id', requireAuth, async (req, res) => {
+router.get("/:id", requireAuth, async (req, res) => {
+  const id = parseId(req.params.id);
+  if (!id) {
+    res.status(400).json({ error: "Invalid ticket ID" });
+    return;
+  }
+
   const ticket = await prisma.ticket.findUnique({
-    where: { id: req.params.id },
+    where: { id },
     include: {
-      assignedAgent: { select: { id: true, name: true } },
-      replies: {
-        orderBy: { createdAt: 'asc' },
-        include: { user: { select: { id: true, name: true } } },
-      },
+      assignedTo: { select: { id: true, name: true } },
     },
   });
+
   if (!ticket) {
-    res.status(404).json({ error: 'Ticket not found' });
+    res.status(404).json({ error: "Ticket not found" });
     return;
   }
+
   res.json(ticket);
 });
 
-router.post('/:id/replies', requireAuth, async (req, res) => {
-  const { body } = req.body as { body?: string };
-  if (!body?.trim()) {
-    res.status(400).json({ error: 'body is required' });
+router.patch("/:id", requireAuth, async (req, res) => {
+  const id = parseId(req.params.id);
+  if (!id) {
+    res.status(400).json({ error: "Invalid ticket ID" });
     return;
   }
 
-  const ticket = await prisma.ticket.findUnique({ where: { id: req.params.id }, select: { id: true } });
+  const data = validate(updateTicketSchema, req.body, res);
+  if (!data) return;
+
+  if (data.assignedToId) {
+    const user = await prisma.user.findUnique({
+      where: { id: data.assignedToId, deletedAt: null },
+    });
+    if (!user) {
+      res.status(400).json({ error: "Invalid agent" });
+      return;
+    }
+  }
+
+  const ticket = await prisma.ticket.findUnique({ where: { id } });
   if (!ticket) {
-    res.status(404).json({ error: 'Ticket not found' });
+    res.status(404).json({ error: "Ticket not found" });
     return;
   }
 
-  const reply = await prisma.reply.create({
+  const updated = await prisma.ticket.update({
+    where: { id },
     data: {
-      ticketId: req.params.id,
-      body: body.trim(),
-      senderType: SenderType.agent,
-      userId: req.authSession.user.id,
+      ...("assignedToId" in data && { assignedToId: data.assignedToId }),
+      ...("status" in data && { status: data.status }),
+      ...("category" in data && { category: data.category }),
     },
-    include: { user: { select: { id: true, name: true } } },
+    include: { assignedTo: { select: { id: true, name: true } } },
   });
-  res.status(201).json(reply);
-});
 
-const patchSchema = z
-  .object({
-    status: z.enum([TicketStatus.open, TicketStatus.resolved, TicketStatus.closed]),
-    category: z
-      .enum([
-        TicketCategory.general_question,
-        TicketCategory.technical_question,
-        TicketCategory.refund_request,
-      ])
-      .nullable(),
-    assignedAgentId: z.string().nullable(),
-  })
-  .partial();
-
-router.patch('/:id', requireAuth, async (req, res) => {
-  const parsed = patchSchema.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.issues });
-    return;
-  }
-  const { status, category, assignedAgentId } = parsed.data;
-
-  if (assignedAgentId !== undefined && assignedAgentId !== null) {
-    const agent = await prisma.user.findUnique({ where: { id: assignedAgentId } });
-    if (!agent || agent.role !== Role.agent) {
-      res.status(400).json({ error: 'Invalid agent' });
-      return;
-    }
-  }
-
-  const updateData: Record<string, unknown> = {};
-  if (status !== undefined) updateData.status = status;
-  if (category !== undefined) updateData.category = category;
-  if (assignedAgentId !== undefined) updateData.assignedAgentId = assignedAgentId;
-
-  const ticket = await prisma.ticket.update({
-    where: { id: req.params.id },
-    data: updateData,
-    include: { assignedAgent: { select: { id: true, name: true } } },
-  });
-  res.json(ticket);
-});
-
-router.post('/:id/summarize', requireAuth, async (req, res) => {
-  if (!process.env.GEMINI_API_KEY) {
-    res.status(503).json({ error: 'AI summarization is not configured' });
-    return;
-  }
-
-  const ticket = await prisma.ticket.findUnique({
-    where: { id: req.params.id },
-    select: {
-      subject: true,
-      body: true,
-      fromName: true,
-      fromEmail: true,
-      replies: {
-        orderBy: { createdAt: 'asc' },
-        select: { body: true, senderType: true, user: { select: { name: true } }, createdAt: true },
-      },
-    },
-  });
-  if (!ticket) {
-    res.status(404).json({ error: 'Ticket not found' });
-    return;
-  }
-
-  const thread = [
-    `Customer (${ticket.fromName ?? ticket.fromEmail}): ${ticket.body}`,
-    ...ticket.replies.map((r) => {
-      const sender = r.senderType === SenderType.agent ? `Agent (${r.user?.name ?? 'Agent'})` : `Customer (${ticket.fromName ?? ticket.fromEmail})`;
-      return `${sender}: ${r.body}`;
-    }),
-  ].join('\n\n');
-
-  const prompt = `Summarize the following customer support ticket conversation in 3–5 concise bullet points. Focus on: the customer's issue, what was done or offered, and the current state. Be brief and factual.
-
-Subject: ${ticket.subject}
-
-Conversation:
-${thread}`;
-
-  try {
-    const response = await gemini.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: prompt,
-    });
-
-    const summary = response.text?.trim();
-    if (!summary) {
-      res.status(502).json({ error: 'No response from AI' });
-      return;
-    }
-
-    res.json({ summary });
-  } catch (err) {
-    console.error('[summarize] Gemini error:', err);
-    res.status(502).json({ error: 'AI request failed' });
-  }
-});
-
-router.post('/:id/polish', requireAuth, async (req, res) => {
-  const { body: draftBody } = req.body as { body?: string };
-  if (!draftBody?.trim()) {
-    res.status(400).json({ error: 'body is required' });
-    return;
-  }
-
-  if (!process.env.GEMINI_API_KEY) {
-    res.status(503).json({ error: 'AI polishing is not configured' });
-    return;
-  }
-
-  const ticket = await prisma.ticket.findUnique({
-    where: { id: req.params.id },
-    select: { subject: true, body: true },
-  });
-  if (!ticket) {
-    res.status(404).json({ error: 'Ticket not found' });
-    return;
-  }
-
-  const prompt = `You are a professional customer support agent. Improve the following draft reply to make it clearer, more professional, and more empathetic — while preserving the original meaning and intent. Return only the improved reply text, with no preamble or explanation.
-
-Ticket subject: ${ticket.subject}
-Customer message: ${ticket.body}
-
-Draft reply:
-${draftBody.trim()}`;
-
-  try {
-    const response = await gemini.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: prompt,
-    });
-
-    const polishedBody = response.text?.trim();
-    if (!polishedBody) {
-      res.status(502).json({ error: 'No response from AI' });
-      return;
-    }
-
-    res.json({ polishedBody });
-  } catch (err) {
-    console.error('[polish] Gemini error:', err);
-    res.status(502).json({ error: 'AI request failed' });
-  }
+  res.json(updated);
 });
 
 export default router;

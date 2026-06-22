@@ -1,30 +1,29 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import LoginPage from './pages/LoginPage';
-import HomePage from './pages/HomePage';
-import UsersPage from './pages/UsersPage';
-import TicketsPage from './pages/TicketsPage';
-import TicketDetailPage from './pages/TicketDetailPage';
-import ProtectedRoute from './components/ProtectedRoute';
-import AdminRoute from './components/AdminRoute';
-import Layout from './components/Layout';
+import { Navigate, Route, Routes } from "react-router";
+import ProtectedRoute from "./components/ProtectedRoute";
+import AdminRoute from "./components/AdminRoute";
+import Layout from "./components/Layout";
+import LoginPage from "./pages/LoginPage";
+import HomePage from "./pages/HomePage";
+import UsersPage from "./pages/UsersPage";
+import TicketsPage from "./pages/TicketsPage";
+import TicketDetailPage from "./pages/TicketDetailPage";
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route element={<ProtectedRoute />}>
-          <Route element={<Layout />}>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/tickets" element={<TicketsPage />} />
-            <Route path="/tickets/:id" element={<TicketDetailPage />} />
-            <Route element={<AdminRoute />}>
-              <Route path="/users" element={<UsersPage />} />
-            </Route>
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
+      <Route element={<ProtectedRoute />}>
+        <Route element={<Layout />}>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/tickets" element={<TicketsPage />} />
+          <Route path="/tickets/:id" element={<TicketDetailPage />} />
+          <Route element={<AdminRoute />}>
+            <Route path="/users" element={<UsersPage />} />
           </Route>
         </Route>
-      </Routes>
-    </BrowserRouter>
+      </Route>
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }
 

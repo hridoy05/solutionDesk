@@ -1,47 +1,85 @@
-import 'dotenv/config';
-import { hashPassword } from 'better-auth/crypto';
-import { Role } from '@prisma/client';
-import prisma from '../src/lib/prisma';
-import { CREDENTIAL_PROVIDER } from '../src/lib/constants';
+import "dotenv/config";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaClient } from "../src/generated/prisma/client";
+import { Role } from "../src/generated/prisma/client";
+import { hashPassword } from "better-auth/crypto";
+import { AI_AGENT_ID } from "core/constants/ai-agent.ts";
 
-async function seedUser(email: string, name: string, role: Role, password: string) {
-  const hashed = await hashPassword(password);
-
-  const user = await prisma.user.upsert({
-    where: { email },
-    update: { role },
-    create: { email, name, emailVerified: true, role },
-  });
-
-  await prisma.account.upsert({
-    where: { providerId_accountId: { providerId: CREDENTIAL_PROVIDER, accountId: email } },
-    update: { password: hashed },
-    create: {
-      accountId: email,
-      providerId: CREDENTIAL_PROVIDER,
-      userId: user.id,
-      password: hashed,
-    },
-  });
-
-  console.log(`Seeded ${role}: ${email}`);
-}
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  const adminEmail = process.env.ADMIN_EMAIL;
-  const adminPassword = process.env.ADMIN_PASSWORD;
-  const agentPassword = process.env.AGENT_PASSWORD;
+  const email = process.env.SEED_ADMIN_EMAIL;
+  const password = process.env.SEED_ADMIN_PASSWORD;
 
-  if (!adminEmail || !adminPassword) {
-    throw new Error('ADMIN_EMAIL and ADMIN_PASSWORD must be set in .env');
+  if (!email || !password) {
+    throw new Error(
+      "SEED_ADMIN_EMAIL and SEED_ADMIN_PASSWORD must be set in .env"
+    );
   }
-  await seedUser(adminEmail, 'Admin', Role.admin, adminPassword);
-  await seedUser('agent@example.com', 'Agent', Role.agent, agentPassword || adminPassword);
+
+  const now = new Date();
+
+  // Seed admin user
+  const existingAdmin = await prisma.user.findUnique({ where: { email } });
+  if (existingAdmin) {
+    console.log(`Admin user ${email} already exists — skipping.`);
+  } else {
+    const hashedPassword = await hashPassword(password);
+    const userId = crypto.randomUUID();
+
+    await prisma.$transaction([
+      prisma.user.create({
+        data: {
+          id: userId,
+          name: "Admin",
+          email,
+          emailVerified: false,
+          role: Role.admin,
+          createdAt: now,
+          updatedAt: now,
+        },
+      }),
+      prisma.account.create({
+        data: {
+          id: crypto.randomUUID(),
+          accountId: userId,
+          providerId: "credential",
+          userId,
+          password: hashedPassword,
+          createdAt: now,
+          updatedAt: now,
+        },
+      }),
+    ]);
+    console.log(`Admin user ${email} created successfully.`);
+  }
+
+  // Seed AI agent user
+  const existingAI = await prisma.user.findUnique({
+    where: { id: AI_AGENT_ID },
+  });
+  if (existingAI) {
+    console.log("AI agent user already exists — skipping.");
+  } else {
+    await prisma.user.create({
+      data: {
+        id: AI_AGENT_ID,
+        name: "AI",
+        email: "ai@helpdesk.local",
+        emailVerified: false,
+        role: Role.agent,
+        createdAt: now,
+        updatedAt: now,
+      },
+    });
+    console.log("AI agent user created successfully.");
+  }
 }
 
 main()
-  .catch((err) => {
-    console.error(err);
+  .catch((e) => {
+    console.error(e);
     process.exit(1);
   })
   .finally(() => prisma.$disconnect());

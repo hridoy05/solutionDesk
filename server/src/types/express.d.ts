@@ -1,9 +1,10 @@
-import type { Session, User } from 'better-auth';
+import type { auth } from "../lib/auth";
 
 declare global {
   namespace Express {
     interface Request {
-      authSession: { session: Session; user: User & { role: string } };
+      user: typeof auth.$Infer.Session.user;
+      session: typeof auth.$Infer.Session.session;
     }
   }
 }

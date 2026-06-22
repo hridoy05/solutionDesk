@@ -1,12 +1,21 @@
-import { Navigate, Outlet } from 'react-router-dom';
-import { authClient } from '../lib/auth-client';
-import { Role } from '../lib/constants';
+import { Navigate, Outlet } from "react-router";
+import { Role } from "core/constants/role.ts";
+import { useSession } from "../lib/auth-client";
 
 export default function AdminRoute() {
-  const { data: session, isPending } = authClient.useSession();
+  const { data: session, isPending } = useSession();
 
-  if (isPending) return <div className="min-h-screen flex items-center justify-center text-muted-foreground text-sm">Loading…</div>;
-  if (!session) return <Navigate to="/login" replace />;
-  if ((session.user as { role?: string }).role !== Role.admin) return <Navigate to="/" replace />;
+  if (isPending) {
+    return (
+      <div className="flex items-center justify-center h-screen text-lg text-muted-foreground">
+        Loading...
+      </div>
+    );
+  }
+
+  if (session?.user?.role !== Role.admin) {
+    return <Navigate to="/" replace />;
+  }
+
   return <Outlet />;
 }
