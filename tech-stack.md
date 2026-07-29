@@ -19,4 +19,4 @@
 - **SendGrid** – inbound email parsing (webhook → ticket creation) and outbound response sending
 
 ### AI
-- **Anthropic Claude API** – ticket classification, AI summaries, suggested replies, and auto-generated responses from the knowledge base
+- **Vercel AI SDK + Google Gemini** – ticket classification, AI summaries, suggested replies, and auto-generated responses from the knowledge base

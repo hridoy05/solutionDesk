@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Project Is
 
-SolutionDesk is an AI-powered support ticket management system. Agents receive support emails, which are auto-classified and auto-responded to using Claude. Admins manage agents; agents manage tickets.
+SolutionDesk is an AI-powered support ticket management system. Agents receive support emails, which are auto-classified and auto-responded to using Google Gemini through the Vercel AI SDK. Admins manage agents; agents manage tickets.
 
 **Roles:** Admin (default, manages agents) · Agent (views and responds to tickets)  
 **Ticket statuses:** Open → Resolved → Closed  
@@ -91,7 +91,7 @@ Always use context7 before writing code that touches any library — training da
 2. mcp__context7__query-docs({ libraryId: "<returned id>", query: "your question" })
 ```
 
-Use for: Express, React, React Router, Prisma, Vite, Anthropic SDK, SendGrid, and any other dependency. Do not skip this for library-specific syntax, config, or migration questions.
+Use for: Express, React, React Router, Prisma, Vite, Vercel AI SDK, Google Gemini, SendGrid, and any other dependency. Do not skip this for library-specific syntax, config, or migration questions.
 
 ## Authentication
 

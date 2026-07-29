@@ -1,6 +1,6 @@
 # SolutionDesk
 
-An AI-powered support ticket management system where customer emails are auto-classified and agents respond quickly with Claude-assisted replies.
+An AI-powered support ticket management system where customer emails are auto-classified and agents respond quickly with Gemini-assisted replies.
 
 ## Overview
 
@@ -22,7 +22,7 @@ SolutionDesk streamlines customer support by automatically ingesting inbound ema
 | Backend | Node.js, Express, TypeScript |
 | Database | PostgreSQL + Prisma ORM |
 | Auth | Better Auth (session-based) |
-| AI | Anthropic Claude API |
+| AI | Vercel AI SDK + Google Gemini |
 | Email | SendGrid (inbound webhook) |
 | Testing | Vitest + React Testing Library, Playwright (E2E) |
 
@@ -42,7 +42,7 @@ solutionDesk/
 
 - Node.js 20+
 - PostgreSQL database
-- Anthropic API key (for AI features)
+- Google Gemini API key (for AI features; available from Google AI Studio's free tier)
 
 ### 1. Install dependencies
 
@@ -63,6 +63,7 @@ DATABASE_URL=postgresql://user:password@localhost:5432/solutiondesk
 BETTER_AUTH_SECRET=     # min 32 chars — generate with: openssl rand -base64 32
 ADMIN_EMAIL=admin@example.com
 ADMIN_PASSWORD=         # min 8 chars
+GEMINI_API_KEY=         # Google AI Studio API key
 ```
 
 ### 3. Set up the database

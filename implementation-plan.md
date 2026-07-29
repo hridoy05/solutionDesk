@@ -34,7 +34,7 @@
 
 ## Phase 5: AI Features
 
-- [ ] Set up Claude API integration
+- [ ] Set up Gemini API integration through the Vercel AI SDK
 - [ ] Implement auto-classification endpoint (categorize incoming tickets)
 - [ ] Implement AI summary endpoint (generate ticket summary)
 - [ ] Implement AI suggested reply endpoint

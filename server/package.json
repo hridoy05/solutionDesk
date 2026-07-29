@@ -14,8 +14,8 @@
     "db:migrate:test": "dotenvx run --env-file .env.test --overload -- prisma migrate deploy",
     "db:seed:test": "dotenvx run --env-file .env.test --overload -- tsx prisma/seed.ts"
   },
-"dependencies": {
-    "@ai-sdk/openai": "^3.0.33",
+  "dependencies": {
+    "@ai-sdk/google": "^3.0.26",
     "@prisma/adapter-pg": "^7.3.0",
     "@prisma/client": "^7.3.0",
     "@sendgrid/inbound-mail-parser": "^8.0.0",
