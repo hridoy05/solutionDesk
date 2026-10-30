@@ -10,6 +10,7 @@
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
     "db:seed": "dotenvx run --env-file .env --overload -- tsx prisma/seed.ts",
+    "db:seed:kb": "dotenvx run --env-file .env --overload -- tsx prisma/seed-kb.ts",
     "start:test": "dotenvx run --env-file .env.test --overload -- tsx src/index.ts",
     "db:migrate:test": "dotenvx run --env-file .env.test --overload -- prisma migrate deploy",
     "db:seed:test": "dotenvx run --env-file .env.test --overload -- tsx prisma/seed.ts"

@@ -102,6 +102,7 @@ model Ticket {
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
   replies      Reply[]
+  aiDecisions  AiDecision[]
 
   @@map("ticket")
 }
@@ -121,7 +122,7 @@ model Reply {
 }
 
 model Verification {
-  id         String    @id
+  id         String   @id
   identifier String
   value      String
   expiresAt  DateTime
@@ -129,4 +130,46 @@ model Verification {
   updatedAt  DateTime?
 
   @@map("verification")
+}
+
+model KbArticle {
+  id        Int       @id @default(autoincrement())
+  title     String
+  question  String    @unique
+  answer    String
+  active    Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  chunks    KbChunk[]
+
+  @@map("kb_article")
+}
+
+model KbChunk {
+  id         Int                          @id @default(autoincrement())
+  articleId  Int
+  article    KbArticle                    @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  chunkIndex Int
+  content    String
+  embedding  Unsupported("vector(768)")?
+  createdAt  DateTime                     @default(now())
+
+  @@unique([articleId, chunkIndex])
+  @@map("kb_chunk")
+}
+
+model AiDecision {
+  id        Int      @id @default(autoincrement())
+  ticketId  Int
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  kind      String
+  model     String
+  chunkIds  Json?
+  bestScore Float?
+  outcome   String
+  detail    String?
+  createdAt DateTime @default(now())
+
+  @@index([ticketId])
+  @@map("ai_decision")
 }

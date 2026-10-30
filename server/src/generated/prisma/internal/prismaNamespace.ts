@@ -389,7 +389,10 @@ export const ModelName = {
   Account: 'Account',
   Ticket: 'Ticket',
   Reply: 'Reply',
-  Verification: 'Verification'
+  Verification: 'Verification',
+  KbArticle: 'KbArticle',
+  KbChunk: 'KbChunk',
+  AiDecision: 'AiDecision'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -405,7 +408,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "session" | "account" | "ticket" | "reply" | "verification"
+    modelProps: "user" | "session" | "account" | "ticket" | "reply" | "verification" | "kbArticle" | "kbChunk" | "aiDecision"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -853,6 +856,228 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    KbArticle: {
+      payload: Prisma.$KbArticlePayload<ExtArgs>
+      fields: Prisma.KbArticleFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.KbArticleFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KbArticlePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.KbArticleFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KbArticlePayload>
+        }
+        findFirst: {
+          args: Prisma.KbArticleFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KbArticlePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.KbArticleFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KbArticlePayload>
+        }
+        findMany: {
+          args: Prisma.KbArticleFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KbArticlePayload>[]
+        }
+        create: {
+          args: Prisma.KbArticleCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KbArticlePayload>
+        }
+        createMany: {
+          args: Prisma.KbArticleCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.KbArticleCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KbArticlePayload>[]
+        }
+        delete: {
+          args: Prisma.KbArticleDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KbArticlePayload>
+        }
+        update: {
+          args: Prisma.KbArticleUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KbArticlePayload>
+        }
+        deleteMany: {
+          args: Prisma.KbArticleDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.KbArticleUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.KbArticleUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KbArticlePayload>[]
+        }
+        upsert: {
+          args: Prisma.KbArticleUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KbArticlePayload>
+        }
+        aggregate: {
+          args: Prisma.KbArticleAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateKbArticle>
+        }
+        groupBy: {
+          args: Prisma.KbArticleGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.KbArticleGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.KbArticleCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.KbArticleCountAggregateOutputType> | number
+        }
+      }
+    }
+    KbChunk: {
+      payload: Prisma.$KbChunkPayload<ExtArgs>
+      fields: Prisma.KbChunkFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.KbChunkFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KbChunkPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.KbChunkFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KbChunkPayload>
+        }
+        findFirst: {
+          args: Prisma.KbChunkFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KbChunkPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.KbChunkFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KbChunkPayload>
+        }
+        findMany: {
+          args: Prisma.KbChunkFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KbChunkPayload>[]
+        }
+        create: {
+          args: Prisma.KbChunkCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KbChunkPayload>
+        }
+        createMany: {
+          args: Prisma.KbChunkCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.KbChunkCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KbChunkPayload>[]
+        }
+        delete: {
+          args: Prisma.KbChunkDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KbChunkPayload>
+        }
+        update: {
+          args: Prisma.KbChunkUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KbChunkPayload>
+        }
+        deleteMany: {
+          args: Prisma.KbChunkDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.KbChunkUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.KbChunkUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KbChunkPayload>[]
+        }
+        upsert: {
+          args: Prisma.KbChunkUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KbChunkPayload>
+        }
+        aggregate: {
+          args: Prisma.KbChunkAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateKbChunk>
+        }
+        groupBy: {
+          args: Prisma.KbChunkGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.KbChunkGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.KbChunkCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.KbChunkCountAggregateOutputType> | number
+        }
+      }
+    }
+    AiDecision: {
+      payload: Prisma.$AiDecisionPayload<ExtArgs>
+      fields: Prisma.AiDecisionFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.AiDecisionFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AiDecisionPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.AiDecisionFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AiDecisionPayload>
+        }
+        findFirst: {
+          args: Prisma.AiDecisionFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AiDecisionPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.AiDecisionFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AiDecisionPayload>
+        }
+        findMany: {
+          args: Prisma.AiDecisionFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AiDecisionPayload>[]
+        }
+        create: {
+          args: Prisma.AiDecisionCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AiDecisionPayload>
+        }
+        createMany: {
+          args: Prisma.AiDecisionCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.AiDecisionCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AiDecisionPayload>[]
+        }
+        delete: {
+          args: Prisma.AiDecisionDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AiDecisionPayload>
+        }
+        update: {
+          args: Prisma.AiDecisionUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AiDecisionPayload>
+        }
+        deleteMany: {
+          args: Prisma.AiDecisionDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.AiDecisionUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.AiDecisionUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AiDecisionPayload>[]
+        }
+        upsert: {
+          args: Prisma.AiDecisionUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AiDecisionPayload>
+        }
+        aggregate: {
+          args: Prisma.AiDecisionAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateAiDecision>
+        }
+        groupBy: {
+          args: Prisma.AiDecisionGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AiDecisionGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.AiDecisionCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AiDecisionCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -982,12 +1207,59 @@ export const VerificationScalarFieldEnum = {
 export type VerificationScalarFieldEnum = (typeof VerificationScalarFieldEnum)[keyof typeof VerificationScalarFieldEnum]
 
 
+export const KbArticleScalarFieldEnum = {
+  id: 'id',
+  title: 'title',
+  question: 'question',
+  answer: 'answer',
+  active: 'active',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type KbArticleScalarFieldEnum = (typeof KbArticleScalarFieldEnum)[keyof typeof KbArticleScalarFieldEnum]
+
+
+export const KbChunkScalarFieldEnum = {
+  id: 'id',
+  articleId: 'articleId',
+  chunkIndex: 'chunkIndex',
+  content: 'content',
+  createdAt: 'createdAt'
+} as const
+
+export type KbChunkScalarFieldEnum = (typeof KbChunkScalarFieldEnum)[keyof typeof KbChunkScalarFieldEnum]
+
+
+export const AiDecisionScalarFieldEnum = {
+  id: 'id',
+  ticketId: 'ticketId',
+  kind: 'kind',
+  model: 'model',
+  chunkIds: 'chunkIds',
+  bestScore: 'bestScore',
+  outcome: 'outcome',
+  detail: 'detail',
+  createdAt: 'createdAt'
+} as const
+
+export type AiDecisionScalarFieldEnum = (typeof AiDecisionScalarFieldEnum)[keyof typeof AiDecisionScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
 } as const
 
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
+
+
+export const NullableJsonNullValueInput = {
+  DbNull: DbNull,
+  JsonNull: JsonNull
+} as const
+
+export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
 
 
 export const QueryMode = {
@@ -1004,6 +1276,15 @@ export const NullsOrder = {
 } as const
 
 export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
+
+
+export const JsonNullValueFilter = {
+  DbNull: DbNull,
+  JsonNull: JsonNull,
+  AnyNull: AnyNull
+} as const
+
+export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter]
 
 
 
@@ -1114,6 +1395,20 @@ export type EnumSenderTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$Prism
  * Reference to a field of type 'SenderType[]'
  */
 export type ListEnumSenderTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'SenderType[]'>
+    
+
+
+/**
+ * Reference to a field of type 'Json'
+ */
+export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Json'>
+    
+
+
+/**
+ * Reference to a field of type 'QueryMode'
+ */
+export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
     
 
 
@@ -1246,6 +1541,9 @@ export type GlobalOmitConfig = {
   ticket?: Prisma.TicketOmit
   reply?: Prisma.ReplyOmit
   verification?: Prisma.VerificationOmit
+  kbArticle?: Prisma.KbArticleOmit
+  kbChunk?: Prisma.KbChunkOmit
+  aiDecision?: Prisma.AiDecisionOmit
 }
 
 /* Types for Logging */

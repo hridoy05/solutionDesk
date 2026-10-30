@@ -71,3 +71,18 @@ export type Reply = Prisma.ReplyModel
  * 
  */
 export type Verification = Prisma.VerificationModel
+/**
+ * Model KbArticle
+ * 
+ */
+export type KbArticle = Prisma.KbArticleModel
+/**
+ * Model KbChunk
+ * 
+ */
+export type KbChunk = Prisma.KbChunkModel
+/**
+ * Model AiDecision
+ * 
+ */
+export type AiDecision = Prisma.AiDecisionModel
