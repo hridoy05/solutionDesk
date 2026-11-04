@@ -1,7 +1,7 @@
 import type { RequestHandler } from "express";
 
 export const requireWebhookSecret: RequestHandler = (req, res, next) => {
-  const secret = process.env.WEBHOOK_SECRET;
+  const secret = process.env.WEBHOOK_SECRET || process.env.INBOUND_WEBHOOK_SECRET;
   if (!secret) {
     res.status(500).json({ error: "Webhook secret is not configured" });
     return;

@@ -6,7 +6,6 @@ import { requireWebhookSecret } from "../middleware/require-webhook-secret";
 import { validate } from "../lib/validate";
 import prisma from "../db";
 import { sendClassifyJob } from "../lib/classify-ticket";
-import { sendAutoResolveJob } from "../lib/auto-resolve-ticket";
 import { AI_AGENT_ID } from "core/constants/ai-agent.ts";
 
 const upload = multer();
@@ -80,12 +79,9 @@ router.post("/inbound-email", requireWebhookSecret, upload.any(), async (req, re
 
   res.status(201).json({ ticket });
 
+  // Enqueue classification worker, which safely chains into auto-resolve if eligible
   sendClassifyJob(ticket).catch((error) =>
     console.error(`Failed to enqueue classify job for ticket ${ticket.id}:`, error)
-  );
-
-  sendAutoResolveJob(ticket).catch((error) =>
-    console.error(`Failed to enqueue auto-resolve job for ticket ${ticket.id}:`, error)
   );
 });
 

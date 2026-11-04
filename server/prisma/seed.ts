@@ -9,12 +9,12 @@ const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  const email = process.env.SEED_ADMIN_EMAIL;
-  const password = process.env.SEED_ADMIN_PASSWORD;
+  const email = process.env.SEED_ADMIN_EMAIL || process.env.ADMIN_EMAIL;
+  const password = process.env.SEED_ADMIN_PASSWORD || process.env.ADMIN_PASSWORD;
 
   if (!email || !password) {
     throw new Error(
-      "SEED_ADMIN_EMAIL and SEED_ADMIN_PASSWORD must be set in .env"
+      "SEED_ADMIN_EMAIL (or ADMIN_EMAIL) and SEED_ADMIN_PASSWORD (or ADMIN_PASSWORD) must be set in .env"
     );
   }
 

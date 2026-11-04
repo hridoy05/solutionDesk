@@ -80,7 +80,10 @@ KB articles stored in Postgres (pgvector).
 ## Future (post-Phase 8 backlog)
 
 - [ ] Admin KB management UI (CRUD + re-embedding on save) over `/api/kb`
-- [ ] Structured classification with `generateObject` (category + confidence + reasoning)
-- [ ] Fix classify → auto-resolve race (chain jobs; refuse auto-resolve for `refund_request`)
-- [ ] Prompt-injection hardening on inbound email content
+- [x] Structured classification with `generateObject` (category + confidence + reasoning) ✅
+- [x] Fix classify → auto-resolve race (chain jobs; refuse auto-resolve for `refund_request`) ✅
+- [x] Lakera Guard v2 integration (`api.lakera.ai/v2/guard`) for prompt injection, jailbreak & PII screening (custom regex checks removed) ✅
+- [x] Braintrust evaluation suite and autoevals benchmark (`npm run eval`) ✅
+- [x] Braintrust distributed observability, token tracking & cost estimation ✅
+- [x] Dynamic context engineering and conversation token budgeting ✅
 - [ ] Extra prisma enum adoption: replace hardcoded status/category strings in workers

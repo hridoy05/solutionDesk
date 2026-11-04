@@ -13,7 +13,8 @@
     "db:seed:kb": "dotenvx run --env-file .env --overload -- tsx prisma/seed-kb.ts",
     "start:test": "dotenvx run --env-file .env.test --overload -- tsx src/index.ts",
     "db:migrate:test": "dotenvx run --env-file .env.test --overload -- prisma migrate deploy",
-    "db:seed:test": "dotenvx run --env-file .env.test --overload -- tsx prisma/seed.ts"
+    "db:seed:test": "dotenvx run --env-file .env.test --overload -- tsx prisma/seed.ts",
+    "eval": "dotenvx run --env-file .env --overload -- tsx src/scripts/run-evals.ts"
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.26",
@@ -24,7 +25,9 @@
     "@sentry/node": "^10.42.0",
     "@types/multer": "^2.0.0",
     "ai": "^6.0.100",
+    "autoevals": "^0.4.1",
     "better-auth": "^1.4.18",
+    "braintrust": "^3.42.0",
     "core": "*",
     "cors": "^2.8.6",
     "dotenv": "^17.2.4",

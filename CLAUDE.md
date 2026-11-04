@@ -25,6 +25,7 @@ From the **root** (runs both concurrently):
 ```bash
 npm run dev       # start client + server together
 npm run build     # build both
+npm run eval      # run Braintrust AI evaluation benchmark suite
 ```
 
 From **`server/`**:
@@ -32,6 +33,7 @@ From **`server/`**:
 npm run dev       # ts-node-dev with hot reload
 npm run build     # tsc → dist/
 npm start         # node dist/index.js
+npm run eval      # run Braintrust + autoevals evaluation suite
 ```
 
 From **`client/`**:
@@ -50,6 +52,14 @@ Planned directory layout inside `server/src/`:
 - `middleware/` — auth guards, error handler
 - `services/` — business logic (AI calls, email, etc.)
 - `types/` — shared TypeScript types
+- `lib/` — AI pipeline (`ai.ts`), Braintrust logger (`braintrust.ts`), AI telemetry (`ai-telemetry.ts`), Context engineering (`context-engineering.ts`), and Lakera Guard AI security (`security.ts`)
+
+## AI, Observability & Security
+
+- **AI Model:** Google Gemini (`gemini-3.8-flash`) integrated via the Vercel AI SDK.
+- **Observability:** Braintrust logger (`server/src/lib/braintrust.ts`) records distributed spans for all AI operations (tokens, latency, estimated cost) with zero telemetry bloat in PostgreSQL.
+- **Evaluation:** Braintrust automated eval suite scored with `autoevals` (`ExactMatch`, `Levenshtein`). Run with `npm run eval`.
+- **Security & PII:** [Lakera Guard v2](https://api.lakera.ai/v2/guard) (`server/src/lib/security.ts`) screens inputs for prompt injections, jailbreaks, and PII violations before prompts reach LLMs. Configured via `LAKERA_GUARD_API_KEY`.
 
 ## Client Architecture
 

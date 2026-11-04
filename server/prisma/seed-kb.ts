@@ -8,10 +8,13 @@ const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  const kbPath = path.resolve(import.meta.dirname!, "../../knowledge-base.md");
-  const articles = parseKnowledgeBase(
-    await import("fs").then((fs) => fs.readFileSync(kbPath, "utf-8"))
-  );
+  const fs = await import("fs");
+  const candidates = [
+    path.resolve(import.meta.dirname!, "../knowledge-base.md"),
+    path.resolve(import.meta.dirname!, "../../knowledge-base.md"),
+  ];
+  const kbPath = candidates.find((p) => fs.existsSync(p)) ?? candidates[0]!;
+  const articles = parseKnowledgeBase(fs.readFileSync(kbPath, "utf-8"));
 
   if (articles.length === 0) {
     console.error("No Q&A articles parsed from knowledge-base.md — aborting.");
